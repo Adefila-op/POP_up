@@ -11,6 +11,14 @@ export type MarketListing = {
   listedAgo: string;
 };
 
+export type ContentOrder = {
+  id: string;
+  contentId: string;
+  title: string;
+  amount: number;
+  createdAt: number;
+};
+
 export type AppStateSnapshot = {
   signedIn: boolean;
   creatorWhitelisted: boolean;
@@ -25,6 +33,8 @@ export type AppStateSnapshot = {
   createdIpAssets: IpAsset[];
   marketListings: MarketListing[];
   ipHoldings: Record<string, number>;
+  contentOrders: ContentOrder[];
+  contentPurchaseCounts: Record<string, number>;
 };
 
 export type AppStateContextValue = AppStateSnapshot & {
@@ -36,7 +46,12 @@ export type AppStateContextValue = AppStateSnapshot & {
   connectWallet: () => void;
   disconnectWallet: () => void;
   setPushEnabled: (enabled: boolean) => void;
-  purchaseContent: (contentId: string) => void;
+  purchaseContent: (contentId: string) => {
+    ok: boolean;
+    reason?: string;
+    alreadyOwned?: boolean;
+    price?: number;
+  };
   publishContent: (input: {
     type: ContentItem["type"];
     title: string;

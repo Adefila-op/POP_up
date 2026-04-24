@@ -138,6 +138,7 @@ function DiscoverPage() {
     savedContentIds,
     likedContentIds,
     ownedContentIds,
+    cashBalance,
     toggleFollowCreator,
     toggleSavedContent,
     toggleLikedContent,
@@ -186,7 +187,18 @@ function DiscoverPage() {
   };
 
   const confirmBuy = (post: FeedItem) => {
-    purchaseContent(post.id);
+    const result = purchaseContent(post.id);
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not complete purchase.");
+      return;
+    }
+
+    if (result.alreadyOwned) {
+      setActiveBuy(null);
+      setOpenItem(post);
+      return;
+    }
+
     toast.success(
       post.price === 0 ? "Added to your library" : `Purchased ${post.title} for $${post.price}`,
       {
@@ -311,7 +323,7 @@ function DiscoverPage() {
       {activeMore && (
         <MoreSheet
           post={activeMore}
-          following={following.has(activeMore.creator)}
+          following={followedCreatorSlugs.includes(creatorSlug(activeMore.creator))}
           onClose={() => setActiveMore(null)}
           onFollow={() => {
             toggleFollow(activeMore.creator);
@@ -327,6 +339,7 @@ function DiscoverPage() {
       {activeBuy && (
         <BuySheet
           post={activeBuy}
+          balance={cashBalance}
           onClose={() => setActiveBuy(null)}
           onConfirm={() => {
             confirmBuy(activeBuy);
@@ -1141,10 +1154,12 @@ function MoreSheet({
 
 function BuySheet({
   post,
+  balance,
   onClose,
   onConfirm,
 }: {
   post: FeedItem;
+  balance: number;
   onClose: () => void;
   onConfirm: () => void;
 }) {
@@ -1176,14 +1191,23 @@ function BuySheet({
               <span>Total</span>
               <span>${total.toFixed(2)}</span>
             </div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Available balance</span>
+              <span>${balance.toFixed(2)}</span>
+            </div>
           </div>
         )}
 
         <button
           onClick={onConfirm}
-          className="mt-5 w-full rounded-full bg-ink py-3 font-semibold text-ink-foreground shadow-ink transition-transform active:scale-[0.98]"
+          disabled={post.price > 0 && balance < total}
+          className="mt-5 w-full rounded-full bg-ink py-3 font-semibold text-ink-foreground shadow-ink transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {post.price === 0 ? "Add to library" : `Pay $${total.toFixed(2)}`}
+          {post.price === 0
+            ? "Add to library"
+            : balance < total
+              ? "Insufficient balance"
+              : `Pay $${total.toFixed(2)}`}
         </button>
         <button
           onClick={onClose}

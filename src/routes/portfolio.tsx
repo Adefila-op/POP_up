@@ -15,9 +15,10 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
-  const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance } =
+  const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance, contentOrders, savedContentIds } =
     useAppState();
   const library = contentCatalog.filter((item) => ownedContentIds.includes(item.id));
+  const saved = contentCatalog.filter((item) => savedContentIds.includes(item.id));
   const holdings = ipCatalog
     .map((ip) => ({ ip, shares: ipHoldings[ip.id] ?? 0 }))
     .filter((holding) => holding.shares > 0);
@@ -129,6 +130,58 @@ function PortfolioPage() {
               </span>
             </Link>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <SectionHead icon={<Wallet className="h-4 w-4" />} title="Recent orders" />
+        <div className="space-y-3">
+          {contentOrders.slice(0, 5).map((order) => (
+            <div key={order.id} className="rounded-2xl bg-card p-3 shadow-soft">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{order.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(order.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <p className="text-sm font-bold">{order.amount === 0 ? "Free" : `-$${order.amount.toFixed(2)}`}</p>
+              </div>
+            </div>
+          ))}
+          {contentOrders.length === 0 && (
+            <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
+              No purchases yet.
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <SectionHead icon={<ShieldCheck className="h-4 w-4" />} title="Saved items" />
+        <div className="space-y-3">
+          {saved.slice(0, 4).map((item) => (
+            <Link
+              key={item.id}
+              to="/content/$id"
+              params={{ id: item.id }}
+              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
+            >
+              <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.creator}</p>
+              </div>
+              <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-semibold text-muted-foreground">
+                Saved
+              </span>
+            </Link>
+          ))}
+          {saved.length === 0 && (
+            <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
+              Save items from Discover to keep them here.
+            </p>
+          )}
         </div>
       </section>
     </AppShell>

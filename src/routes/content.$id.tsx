@@ -30,7 +30,7 @@ export const Route = createFileRoute("/content/$id")({
 function ContentDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const { contentCatalog, ownedContentIds, purchaseContent } = useAppState();
+  const { contentCatalog, ownedContentIds, purchaseContent, cashBalance } = useAppState();
   const item = contentCatalog.find((content) => content.id === id) ?? getContent(id);
   const [viewerOpen, setViewerOpen] = useState(false);
   const purchased = ownedContentIds.includes(id);
@@ -44,7 +44,17 @@ function ContentDetailPage() {
   }
 
   const handlePurchase = () => {
-    purchaseContent(item.id);
+    const result = purchaseContent(item.id);
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not complete purchase.");
+      return;
+    }
+
+    if (result.alreadyOwned) {
+      setViewerOpen(true);
+      return;
+    }
+
     toast.success(item.price === 0 ? "Added to your library" : `Purchased for $${item.price}`);
   };
 
@@ -123,6 +133,7 @@ function ContentDetailPage() {
             <div>
               <p className="text-xs text-muted-foreground">Price</p>
               <p className="text-2xl font-bold">{item.price === 0 ? "Free" : `$${item.price}`}</p>
+              <p className="text-xs text-muted-foreground">Balance: ${cashBalance.toFixed(2)}</p>
             </div>
             {!purchased ? (
               <button

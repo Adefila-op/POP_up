@@ -25,6 +25,7 @@ function IpDetailPage() {
     marketListings,
     ipHoldings,
     cashBalance,
+    walletConnected,
     buyIpListing,
     createIpListing,
     cancelIpListing,
@@ -173,7 +174,7 @@ function IpDetailPage() {
         <div className="rounded-3xl bg-card p-5 shadow-soft">
           <div className="mb-4 grid grid-cols-2 gap-3">
             <Stat label="Cash balance" value={`$${cashBalance.toFixed(2)}`} />
-            <Stat label="Listed supply" value={`${totalSupply}`} />
+            <Stat label="Wallet" value={walletConnected ? "Connected" : "Required"} />
           </div>
 
           <div className="mb-4 flex items-center justify-between">
@@ -228,14 +229,17 @@ function IpDetailPage() {
                 </label>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                You currently have {ownedShares} shares available to list.
+                {walletConnected
+                  ? `You currently have ${ownedShares} shares available to list.`
+                  : "Connect your wallet from Portfolio before trading IP."}
               </p>
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-2.5 text-sm font-semibold text-ink-foreground"
+                disabled={!walletConnected}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-2.5 text-sm font-semibold text-ink-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Tag className="h-4 w-4" />
-                Confirm listing
+                {walletConnected ? "Confirm listing" : "Wallet required"}
               </button>
             </form>
           )}
@@ -287,7 +291,8 @@ function IpDetailPage() {
                   {!isYou ? (
                     <button
                       onClick={() => handleBuy(listing)}
-                      className="ml-1 inline-flex items-center gap-1 rounded-full bg-ink px-3 py-2 text-xs font-semibold text-ink-foreground transition-transform hover:scale-105 active:scale-95"
+                      disabled={!walletConnected}
+                      className="ml-1 inline-flex items-center gap-1 rounded-full bg-ink px-3 py-2 text-xs font-semibold text-ink-foreground transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ShoppingBag className="h-3.5 w-3.5" />
                       Buy

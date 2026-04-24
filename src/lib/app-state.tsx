@@ -67,6 +67,8 @@ const initialSnapshot: AppStateSnapshot = {
     ip1: 50,
     ip3: 12,
   },
+  contentOrders: [],
+  contentPurchaseCounts: {},
 };
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
@@ -94,7 +96,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateContextValue>(
     () => ({
       ...state,
-      contentCatalog: [...state.createdContent, ...CONTENT],
+      contentCatalog: [...state.createdContent, ...CONTENT].map((item) => ({
+        ...item,
+        sales: item.sales + (state.contentPurchaseCounts[item.id] ?? 0),
+      })),
       ipCatalog: [...state.createdIpAssets, ...IP_ASSETS],
       signIn: () => setState((prev) => ({ ...prev, signedIn: true })),
       signOut: () =>
@@ -108,13 +113,38 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       connectWallet: () => setState((prev) => ({ ...prev, walletConnected: true })),
       disconnectWallet: () => setState((prev) => ({ ...prev, walletConnected: false })),
       setPushEnabled: (enabled: boolean) => setState((prev) => ({ ...prev, pushEnabled: enabled })),
-      purchaseContent: (contentId: string) =>
+      purchaseContent: (contentId: string) => {
+        const item = [...state.createdContent, ...CONTENT].find((content) => content.id === contentId);
+        if (!item) return { ok: false, reason: "Content not found." };
+        if (state.ownedContentIds.includes(contentId)) {
+          return { ok: true, alreadyOwned: true, price: item.price };
+        }
+        if (item.price > state.cashBalance) {
+          return { ok: false, reason: "Not enough balance to complete this purchase." };
+        }
+
         setState((prev) => ({
           ...prev,
-          ownedContentIds: prev.ownedContentIds.includes(contentId)
-            ? prev.ownedContentIds
-            : [contentId, ...prev.ownedContentIds],
-        })),
+          cashBalance: +(prev.cashBalance - item.price).toFixed(2),
+          ownedContentIds: [contentId, ...prev.ownedContentIds],
+          contentOrders: [
+            {
+              id: `order-${contentId}-${Date.now()}`,
+              contentId,
+              title: item.title,
+              amount: item.price,
+              createdAt: Date.now(),
+            },
+            ...prev.contentOrders,
+          ],
+          contentPurchaseCounts: {
+            ...prev.contentPurchaseCounts,
+            [contentId]: (prev.contentPurchaseCounts[contentId] ?? 0) + 1,
+          },
+        }));
+
+        return { ok: true, price: item.price };
+      },
       publishContent: ({ type, title, description, price, tokenize, fileName }) => {
         const now = Date.now();
         const creator = getCreatorByName(DEMO_CREATOR_NAME) ?? CREATORS[0];
@@ -207,6 +237,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return liked;
       },
       buyIpListing: (listingId: string) => {
+        if (!state.walletConnected) {
+          return { ok: false, reason: "Connect your wallet before buying IP." };
+        }
         const listing = state.marketListings.find((item) => item.id === listingId);
         if (!listing) return { ok: false, reason: "Listing not found." };
 
@@ -228,6 +261,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return { ok: true, qty: listing.qty, price: listing.price };
       },
       createIpListing: ({ ipId, qty, price }) => {
+        if (!state.walletConnected) {
+          return { ok: false, reason: "Connect your wallet before listing shares." };
+        }
         const available = state.ipHoldings[ipId] ?? 0;
         if (qty < 1 || price <= 0) return { ok: false, reason: "Enter a valid quantity and price." };
         if (available < qty) return { ok: false, reason: "You do not own enough shares." };
@@ -273,6 +309,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return { ok: true };
       },
       sellIpToPool: ({ ipId, qty, pricePerShare }) => {
+        if (!state.walletConnected) {
+          return { ok: false, reason: "Connect your wallet before selling to the pool." };
+        }
         const available = state.ipHoldings[ipId] ?? 0;
         if (qty < 1) return { ok: false, reason: "Enter a valid quantity." };
         if (available < qty) return { ok: false, reason: "Not enough shares available." };

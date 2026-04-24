@@ -40,6 +40,10 @@ function UploadPage() {
     signIn,
     enableCreatorWhitelist,
     publishContent,
+    createdContent,
+    createdIpAssets,
+    contentOrders,
+    cashBalance,
   } = useAppState();
   const [type, setType] = useState<ContentType>("pdf");
   const [title, setTitle] = useState("");
@@ -199,10 +203,10 @@ function UploadPage() {
                 <TrendingUp className="h-4 w-4" />
               </span>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                +20 sales
+                {contentOrders.length} sales
               </span>
             </div>
-            <p className="mt-4 text-3xl font-bold">$180K</p>
+            <p className="mt-4 text-3xl font-bold">${cashBalance.toFixed(0)}</p>
             <p className="text-xs text-muted-foreground">Earnings</p>
           </div>
           <div className="relative overflow-hidden rounded-3xl bg-primary p-4 text-primary-foreground shadow-soft">
@@ -211,10 +215,10 @@ function UploadPage() {
                 <Package className="h-4 w-4" />
               </span>
               <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold">
-                +205 IP
+                {createdIpAssets.length} IP
               </span>
             </div>
-            <p className="mt-4 text-3xl font-bold">20K</p>
+            <p className="mt-4 text-3xl font-bold">{createdContent.length}</p>
             <p className="text-xs opacity-80">Items</p>
           </div>
         </section>
