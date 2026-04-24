@@ -1,7 +1,5 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, HeadContent } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
-
-import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
   return (
@@ -37,47 +35,18 @@ export const Route = createRootRoute({
       { property: "og:description", content: "Popup - Creator Commerce Platform" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "Popup" },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      {
-        rel: "manifest",
-        href: "/manifest.json",
-      },
-      {
-        rel: "apple-touch-icon",
-        href: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23a78bfa' width='180' height='180' rx='40'/><text x='50%' y='50%' font-size='90' fill='white' text-anchor='middle' dy='.3em' font-weight='bold' font-family='system-ui'>P</text></svg>",
-      },
-    ],
   }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
 });
 
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
 function RootComponent() {
   return (
     <>
+      <HeadContent />
       <Outlet />
       <Toaster position="top-center" />
     </>

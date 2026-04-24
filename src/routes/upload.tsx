@@ -1,6 +1,15 @@
 import { useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Upload, FileText, Image as ImageIcon, Wrench, Check, TrendingUp, Package } from "lucide-react";
+import {
+  ArrowLeft,
+  Upload,
+  FileText,
+  Image as ImageIcon,
+  Wrench,
+  Check,
+  TrendingUp,
+  Package,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -106,7 +115,9 @@ function UploadPage() {
                       : "border-transparent bg-card hover:border-border",
                   )}
                 >
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-full ${t.cls}`}>
+                  <span
+                    className={`flex h-10 w-10 items-center justify-center rounded-full ${t.cls}`}
+                  >
                     <Icon className="h-5 w-5" />
                   </span>
                   <span className="text-xs font-semibold">{t.label}</span>

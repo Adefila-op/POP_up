@@ -150,7 +150,11 @@ function DiscoverPage() {
   const toggleLike = (id: string) =>
     setLiked((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
 
@@ -191,9 +195,7 @@ function DiscoverPage() {
   const confirmBuy = (post: FeedItem) => {
     setBought((prev) => new Set(prev).add(post.id));
     toast.success(
-      post.price === 0
-        ? "Added to your library"
-        : `Purchased ${post.title} for $${post.price}`,
+      post.price === 0 ? "Added to your library" : `Purchased ${post.title} for $${post.price}`,
       {
         description: post.type === "tool" ? "Ready to download" : "Ready to view",
         action: {
@@ -312,9 +314,7 @@ function DiscoverPage() {
           onLike={(cid) => toggleCommentLike(commentPost.id, cid)}
         />
       )}
-      {activeShare && (
-        <ShareSheet post={activeShare} onClose={() => setActiveShare(null)} />
-      )}
+      {activeShare && <ShareSheet post={activeShare} onClose={() => setActiveShare(null)} />}
       {activeMore && (
         <MoreSheet
           post={activeMore}
@@ -341,9 +341,7 @@ function DiscoverPage() {
           }}
         />
       )}
-      {openItem && (
-        <ContentOpener item={openItem} onClose={() => setOpenItem(null)} />
-      )}
+      {openItem && <ContentOpener item={openItem} onClose={() => setOpenItem(null)} />}
     </AppShell>
   );
 }
@@ -441,9 +439,7 @@ function FeedPost({
               onClick={onFollow}
               className={cn(
                 "rounded-full px-2 py-0.5 text-[10px] font-semibold transition-colors",
-                following
-                  ? "bg-muted text-muted-foreground"
-                  : "bg-primary text-primary-foreground",
+                following ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground",
               )}
             >
               {following ? (
@@ -576,29 +572,18 @@ function FeedPost({
       {/* Meta */}
       <div className="space-y-1 px-5 pb-4">
         <p className="text-sm font-semibold">{likeCount.toLocaleString()} likes</p>
-        <p
-          className={cn(
-            "text-sm leading-snug",
-            !captionOpen && "line-clamp-2",
-          )}
-        >
+        <p className={cn("text-sm leading-snug", !captionOpen && "line-clamp-2")}>
           <span className="font-semibold">{post.creator}</span>{" "}
           <span className="font-semibold">{post.title}</span>
           <span className="text-foreground/80"> — {post.caption}</span>
         </p>
         {!captionOpen && post.caption.length > 60 && (
-          <button
-            onClick={() => setCaptionOpen(true)}
-            className="text-xs text-muted-foreground"
-          >
+          <button onClick={() => setCaptionOpen(true)} className="text-xs text-muted-foreground">
             more
           </button>
         )}
         <p className="text-xs text-primary">{post.tags.join(" ")}</p>
-        <button
-          onClick={onOpenComments}
-          className="pt-1 text-xs text-muted-foreground"
-        >
+        <button onClick={onOpenComments} className="pt-1 text-xs text-muted-foreground">
           View all {post.comments.length} comments
         </button>
       </div>
@@ -739,9 +724,7 @@ function CommentsSheet({
     const sorted = [...roots].sort((a, b) => {
       if (a.pinned && !b.pinned) return -1;
       if (b.pinned && !a.pinned) return 1;
-      return sort === "top"
-        ? b.likes - a.likes
-        : b.createdAt - a.createdAt;
+      return sort === "top" ? b.likes - a.likes : b.createdAt - a.createdAt;
     });
     const threadList = sorted.map((root) => ({
       root,
@@ -811,23 +794,16 @@ function CommentsSheet({
       <div className="max-h-[55vh] space-y-4 overflow-y-auto px-5 pb-4">
         {threads.map(({ root, replies }) => (
           <div key={root.id}>
-            <CommentRow
-              c={root}
-              onLike={() => onLike(root.id)}
-              onReply={() => startReply(root)}
-            />
+            <CommentRow c={root} onLike={() => onLike(root.id)} onReply={() => startReply(root)} />
             {replies.length > 0 && (
               <div className="ml-12 mt-2 space-y-3 border-l-2 border-border/60 pl-3">
                 {!openThreads.has(root.id) ? (
                   <button
-                    onClick={() =>
-                      setOpenThreads((prev) => new Set(prev).add(root.id))
-                    }
+                    onClick={() => setOpenThreads((prev) => new Set(prev).add(root.id))}
                     className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
                   >
                     <CornerDownRight className="h-3 w-3" />
-                    View {replies.length}{" "}
-                    {replies.length === 1 ? "reply" : "replies"}
+                    View {replies.length} {replies.length === 1 ? "reply" : "replies"}
                   </button>
                 ) : (
                   <>
@@ -862,9 +838,7 @@ function CommentsSheet({
           <div className="py-10 text-center">
             <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground/50" />
             <p className="mt-2 text-sm font-semibold">No comments yet</p>
-            <p className="text-xs text-muted-foreground">
-              Be the first to share what you think.
-            </p>
+            <p className="text-xs text-muted-foreground">Be the first to share what you think.</p>
           </div>
         )}
       </div>
@@ -901,10 +875,7 @@ function CommentsSheet({
           </div>
         )}
 
-        <form
-          onSubmit={submit}
-          className="flex items-end gap-2 px-4 pb-3"
-        >
+        <form onSubmit={submit} className="flex items-end gap-2 px-4 pb-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground">
             YO
           </div>
@@ -1003,10 +974,7 @@ function CommentRow({
               {c.likes} {c.likes === 1 ? "like" : "likes"}
             </span>
           )}
-          <button
-            onClick={onReply}
-            className="font-semibold hover:text-foreground"
-          >
+          <button onClick={onReply} className="font-semibold hover:text-foreground">
             Reply
           </button>
           {c.pinned && (
@@ -1021,12 +989,7 @@ function CommentRow({
         aria-label="Like comment"
         className="p-1 text-muted-foreground transition-transform active:scale-125"
       >
-        <Heart
-          className={cn(
-            "h-3.5 w-3.5",
-            c.liked && "fill-destructive text-destructive",
-          )}
-        />
+        <Heart className={cn("h-3.5 w-3.5", c.liked && "fill-destructive text-destructive")} />
       </button>
     </div>
   );
@@ -1111,12 +1074,7 @@ function ShareSheet({ post, onClose }: { post: FeedItem; onClose: () => void }) 
             }}
             className="flex flex-col items-center gap-2 rounded-2xl bg-background p-3 text-xs font-semibold transition-transform active:scale-95"
           >
-            <span
-              className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-2xl",
-                t.cls,
-              )}
-            >
+            <span className={cn("flex h-12 w-12 items-center justify-center rounded-2xl", t.cls)}>
               <t.Icon className="h-5 w-5" />
             </span>
             {t.label}
@@ -1203,18 +1161,12 @@ function BuySheet({
     <Sheet title={post.price === 0 ? "Get for free" : "Confirm purchase"} onClose={onClose}>
       <div className="px-5 pb-6">
         <div className="flex items-center gap-3 rounded-2xl bg-secondary p-3">
-          <img
-            src={post.cover}
-            alt=""
-            className="h-14 w-14 rounded-xl object-cover"
-          />
+          <img src={post.cover} alt="" className="h-14 w-14 rounded-xl object-cover" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold">{post.title}</p>
             <p className="text-xs text-muted-foreground">by {post.creator}</p>
           </div>
-          <p className="text-base font-bold">
-            {post.price === 0 ? "Free" : `$${post.price}`}
-          </p>
+          <p className="text-base font-bold">{post.price === 0 ? "Free" : `$${post.price}`}</p>
         </div>
 
         {post.price > 0 && (

@@ -1,6 +1,6 @@
 @import "tailwindcss" source(none);
-@source "../src";
 @import "tw-animate-css";
+@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -167,7 +167,10 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     letter-spacing: -0.02em;
   }
 }
@@ -175,13 +178,11 @@
 @utility bg-hero-blue {
   background:
     radial-gradient(circle at 20% 10%, oklch(0.78 0.16 245) 0%, transparent 55%),
-    radial-gradient(circle at 90% 90%, oklch(0.6 0.2 250) 0%, transparent 50%),
-    var(--color-primary);
+    radial-gradient(circle at 90% 90%, oklch(0.6 0.2 250) 0%, transparent 50%), var(--color-primary);
 }
 
 @utility bg-soft-grid {
-  background-image:
-    radial-gradient(oklch(0.68 0.18 245 / 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(oklch(0.68 0.18 245 / 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 

@@ -28,8 +28,8 @@ function MarketplacePage() {
       <div className="mb-4 flex items-center gap-3 rounded-2xl bg-primary-soft p-4">
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
         <p className="text-xs leading-relaxed text-foreground">
-          Each IP has an open order book. Floor price = lowest listing. Sell
-          back instantly at the protocol buyback price.
+          Each IP has an open order book. Floor price = lowest listing. Sell back instantly at the
+          protocol buyback price.
         </p>
       </div>
 

@@ -1,14 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  ArrowLeft,
-  TrendingUp,
-  Tag,
-  Plus,
-  ShoppingBag,
-  RefreshCcw,
-  Layers,
-} from "lucide-react";
+import { ArrowLeft, TrendingUp, Tag, Plus, ShoppingBag, RefreshCcw, Layers } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { getIp } from "@/lib/data";
 import { toast } from "sonner";
@@ -71,10 +63,7 @@ function IpDetailPage() {
   const [listQty, setListQty] = useState(1);
   const [listPrice, setListPrice] = useState(ip?.pricePerShare ?? 1);
 
-  const sorted = useMemo(
-    () => [...listings].sort((a, b) => a.price - b.price),
-    [listings],
-  );
+  const sorted = useMemo(() => [...listings].sort((a, b) => a.price - b.price), [listings]);
 
   const floor = sorted[0]?.price ?? 0;
   const totalSupply = listings.reduce((s, l) => s + l.qty, 0);
@@ -84,9 +73,8 @@ function IpDetailPage() {
   // Mock liquidity available for buyback (in USD)
   const liquidity = ip ? Math.round(ip.monthlyRevenue * 4.2) : 0;
   // Buyback = avg price discounted by available liquidity coverage
-  const coverage = avgPrice * totalSupply > 0
-    ? Math.min(1, liquidity / (avgPrice * totalSupply))
-    : 0;
+  const coverage =
+    avgPrice * totalSupply > 0 ? Math.min(1, liquidity / (avgPrice * totalSupply)) : 0;
   const buybackPrice = +(avgPrice * (0.85 + coverage * 0.1)).toFixed(2);
 
   if (!ip) {
@@ -160,9 +148,7 @@ function IpDetailPage() {
                   : "bg-destructive/15 text-destructive",
               )}
             >
-              <TrendingUp
-                className={cn("mr-1 inline h-3 w-3", ip.change24h < 0 && "rotate-180")}
-              />
+              <TrendingUp className={cn("mr-1 inline h-3 w-3", ip.change24h < 0 && "rotate-180")} />
               {ip.change24h >= 0 ? "+" : ""}
               {ip.change24h}%
             </span>
@@ -241,9 +227,7 @@ function IpDetailPage() {
                     type="number"
                     min={1}
                     value={listQty}
-                    onChange={(e) =>
-                      setListQty(Math.max(1, Number(e.target.value) || 1))
-                    }
+                    onChange={(e) => setListQty(Math.max(1, Number(e.target.value) || 1))}
                     className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 font-semibold focus:border-primary focus:outline-none"
                   />
                 </label>
@@ -328,9 +312,7 @@ function IpDetailPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() =>
-                        setListings((prev) => prev.filter((x) => x.id !== l.id))
-                      }
+                      onClick={() => setListings((prev) => prev.filter((x) => x.id !== l.id))}
                       className="ml-1 rounded-full border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
                     >
                       Cancel
@@ -346,15 +328,7 @@ function IpDetailPage() {
   );
 }
 
-function Stat({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
+function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div
       className={cn(

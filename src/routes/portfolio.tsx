@@ -58,8 +58,12 @@ function PortfolioPage() {
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold">${(shares * ip.pricePerShare).toFixed(2)}</p>
-                <p className={`text-xs font-semibold ${ip.change24h >= 0 ? "text-success" : "text-destructive"}`}>
-                  <TrendingUp className={`inline h-3 w-3 ${ip.change24h < 0 ? "rotate-180" : ""}`} />{" "}
+                <p
+                  className={`text-xs font-semibold ${ip.change24h >= 0 ? "text-success" : "text-destructive"}`}
+                >
+                  <TrendingUp
+                    className={`inline h-3 w-3 ${ip.change24h < 0 ? "rotate-180" : ""}`}
+                  />{" "}
                   {ip.change24h >= 0 ? "+" : ""}
                   {ip.change24h}%
                 </p>
@@ -83,7 +87,9 @@ function PortfolioPage() {
               <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{item.title}</p>
-                <p className="text-xs capitalize text-muted-foreground">{item.type} · {item.creator}</p>
+                <p className="text-xs capitalize text-muted-foreground">
+                  {item.type} · {item.creator}
+                </p>
               </div>
               <span className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-semibold text-success-foreground">
                 Owned

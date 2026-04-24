@@ -9,9 +9,15 @@ export const Route = createFileRoute("/store")({
   head: () => ({
     meta: [
       { title: "Store — Orisale" },
-      { name: "description", content: "Browse PDFs, digital art and tools from independent creators." },
+      {
+        name: "description",
+        content: "Browse PDFs, digital art and tools from independent creators.",
+      },
       { property: "og:title", content: "Orisale Store" },
-      { property: "og:description", content: "Discover digital content from independent creators." },
+      {
+        property: "og:description",
+        content: "Discover digital content from independent creators.",
+      },
     ],
   }),
   component: StorePage,

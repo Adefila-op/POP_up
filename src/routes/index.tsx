@@ -34,9 +34,7 @@ function HomePage() {
           <h1 className="mt-1 text-3xl font-bold leading-tight text-balance">
             The complete sales app for creators.
           </h1>
-          <p className="mt-3 text-sm opacity-90">
-            Sell content, own IP, earn from pools.
-          </p>
+          <p className="mt-3 text-sm opacity-90">Sell content, own IP, earn from pools.</p>
           <Link
             to="/store"
             className="mt-5 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-ink-foreground shadow-ink transition-transform hover:scale-105"
@@ -58,9 +56,24 @@ function HomePage() {
       <section className="mt-6">
         <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Browse by type</h2>
         <div className="grid grid-cols-3 gap-3">
-          <CategoryTile to="/store" label="PDFs" icon={<FileText className="h-5 w-5" />} tone="warning" />
-          <CategoryTile to="/store" label="Art" icon={<ImageIcon className="h-5 w-5" />} tone="primary" />
-          <CategoryTile to="/store" label="Tools" icon={<Wrench className="h-5 w-5" />} tone="success" />
+          <CategoryTile
+            to="/store"
+            label="PDFs"
+            icon={<FileText className="h-5 w-5" />}
+            tone="warning"
+          />
+          <CategoryTile
+            to="/store"
+            label="Art"
+            icon={<ImageIcon className="h-5 w-5" />}
+            tone="primary"
+          />
+          <CategoryTile
+            to="/store"
+            label="Tools"
+            icon={<Wrench className="h-5 w-5" />}
+            tone="success"
+          />
         </div>
       </section>
 
@@ -93,7 +106,9 @@ function HomePage() {
               />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{ip.title}</p>
-                <p className="text-xs text-muted-foreground">{ip.category} · {ip.creator}</p>
+                <p className="text-xs text-muted-foreground">
+                  {ip.category} · {ip.creator}
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold">${ip.pricePerShare}</p>

@@ -15,12 +15,7 @@ import {
   Mail,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import {
-  CREATORS,
-  getCreator,
-  getCreatorContent,
-  getCreatorIp,
-} from "@/lib/data";
+import { CREATORS, getCreator, getCreatorContent, getCreatorIp } from "@/lib/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -59,9 +54,7 @@ function CreatorPage() {
   if (!creator) {
     return (
       <AppShell title="Not found">
-        <p className="py-20 text-center text-muted-foreground">
-          Creator not found.
-        </p>
+        <p className="py-20 text-center text-muted-foreground">Creator not found.</p>
         <div className="mt-4 grid grid-cols-2 gap-3">
           {CREATORS.slice(0, 4).map((c) => (
             <Link
@@ -170,9 +163,7 @@ function CreatorPage() {
             <p className="text-xs text-muted-foreground">@{creator.slug}</p>
           </div>
 
-          <p className="mt-3 text-sm leading-relaxed text-foreground/90">
-            {creator.bio}
-          </p>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/90">{creator.bio}</p>
 
           <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1">
@@ -259,11 +250,7 @@ function CreatorPage() {
                 params={{ id: ip.id }}
                 className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
               >
-                <img
-                  src={ip.cover}
-                  alt=""
-                  className="h-16 w-16 rounded-xl object-cover"
-                />
+                <img src={ip.cover} alt="" className="h-16 w-16 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold">{ip.title}</p>
                   <p className="text-xs text-muted-foreground">{ip.category}</p>
@@ -286,9 +273,7 @@ function CreatorPage() {
               </Link>
             ))}
             {ips.length === 0 && (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                No IP listings yet.
-              </p>
+              <p className="py-10 text-center text-sm text-muted-foreground">No IP listings yet.</p>
             )}
           </div>
         )}
@@ -301,9 +286,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-secondary px-3 py-2 text-center">
       <p className="text-base font-bold">{value}</p>
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
     </div>
   );
 }

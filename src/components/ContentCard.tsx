@@ -2,11 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { FileText, Image as ImageIcon, Wrench, Star } from "lucide-react";
 import type { ContentItem } from "@/lib/data";
 
-const typeMeta: Record<ContentItem["type"], { label: string; icon: typeof FileText; cls: string }> = {
-  pdf: { label: "PDF", icon: FileText, cls: "bg-warning/20 text-warning-foreground" },
-  art: { label: "Art", icon: ImageIcon, cls: "bg-primary-soft text-primary" },
-  tool: { label: "Tool", icon: Wrench, cls: "bg-success/20 text-success-foreground" },
-};
+const typeMeta: Record<ContentItem["type"], { label: string; icon: typeof FileText; cls: string }> =
+  {
+    pdf: { label: "PDF", icon: FileText, cls: "bg-warning/20 text-warning-foreground" },
+    art: { label: "Art", icon: ImageIcon, cls: "bg-primary-soft text-primary" },
+    tool: { label: "Tool", icon: Wrench, cls: "bg-success/20 text-success-foreground" },
+  };
 
 export function ContentCard({ item }: { item: ContentItem }) {
   const meta = typeMeta[item.type];

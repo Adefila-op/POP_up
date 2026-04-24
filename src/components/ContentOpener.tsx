@@ -9,13 +9,7 @@ import { toast } from "sonner";
  * - Art: gallery viewer
  * - Tool: download confirmation screen
  */
-export function ContentOpener({
-  item,
-  onClose,
-}: {
-  item: ContentItem;
-  onClose: () => void;
-}) {
+export function ContentOpener({ item, onClose }: { item: ContentItem; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
@@ -51,9 +45,7 @@ export function ContentOpener({
       <div className="flex-1 overflow-auto bg-muted">
         {item.type === "pdf" && <PdfReader item={item} />}
         {item.type === "art" && <ArtGallery item={item} />}
-        {item.type === "tool" && (
-          <ToolDownload item={item} onDownload={handleDownload} />
-        )}
+        {item.type === "tool" && <ToolDownload item={item} onDownload={handleDownload} />}
       </div>
     </div>
   );
@@ -68,16 +60,11 @@ function PdfReader({ item }: { item: ContentItem }) {
         Reading 1–{pages} of {totalPages}
       </p>
       {Array.from({ length: pages }).map((_, i) => (
-        <div
-          key={i}
-          className="aspect-[3/4] rounded-xl bg-card p-6 shadow-soft"
-        >
+        <div key={i} className="aspect-[3/4] rounded-xl bg-card p-6 shadow-soft">
           <p className="text-xs text-muted-foreground">
             Page {i + 1} of {totalPages}
           </p>
-          <h3 className="mt-3 text-lg font-bold">
-            {i === 0 ? item.title : `Chapter ${i}`}
-          </h3>
+          <h3 className="mt-3 text-lg font-bold">{i === 0 ? item.title : `Chapter ${i}`}</h3>
           <div className="mt-4 space-y-2">
             {Array.from({ length: 8 }).map((__, j) => (
               <div
@@ -98,11 +85,7 @@ function ArtGallery({ item }: { item: ContentItem }) {
     <div className="mx-auto max-w-md space-y-4 p-5">
       {[item.cover, item.cover, item.cover].map((src, i) => (
         <figure key={i} className="overflow-hidden rounded-xl bg-card shadow-soft">
-          <img
-            src={src}
-            alt={`${item.title} preview ${i + 1}`}
-            className="w-full object-cover"
-          />
+          <img src={src} alt={`${item.title} preview ${i + 1}`} className="w-full object-cover" />
           <figcaption className="px-4 py-3 text-xs text-muted-foreground">
             {item.title} — {item.artStyle ?? "Artwork"} #{i + 1}
           </figcaption>
@@ -112,13 +95,7 @@ function ArtGallery({ item }: { item: ContentItem }) {
   );
 }
 
-function ToolDownload({
-  item,
-  onDownload,
-}: {
-  item: ContentItem;
-  onDownload: () => void;
-}) {
+function ToolDownload({ item, onDownload }: { item: ContentItem; onDownload: () => void }) {
   return (
     <div className="mx-auto max-w-sm space-y-5 p-6 pt-12 text-center">
       <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-pop">

@@ -176,9 +176,7 @@ function ContentDetailPage() {
       </div>
 
       {/* In-app opener */}
-      {viewerOpen && (
-        <ContentOpener item={item} onClose={() => setViewerOpen(false)} />
-      )}
+      {viewerOpen && <ContentOpener item={item} onClose={() => setViewerOpen(false)} />}
     </div>
   );
 }
@@ -206,9 +204,10 @@ function TypeBadge({ type }: { type: "pdf" | "art" | "tool" }) {
 function Spec({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl bg-secondary px-3 py-2">
-      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
       <p className="text-sm font-semibold">{value}</p>
     </div>
   );
 }
-
