@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Compass, Sparkles, Wallet, Plus } from "lucide-react";
+import { Home, Compass, Sparkles, Wallet, Plus, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
@@ -7,6 +7,7 @@ const items = [
   { to: "/discover", label: "Discover", icon: Compass },
   { to: "/marketplace", label: "IP", icon: Sparkles },
   { to: "/portfolio", label: "Portfolio", icon: Wallet },
+  { to: "/creator", label: "Creator", icon: BarChart3 },
 ] as const;
 
 export function BottomNav() {
@@ -31,7 +32,7 @@ export function BottomNav() {
         </Link>
 
         {items.slice(2).map((item) => (
-          <NavLink key={item.to} item={item} active={pathname.startsWith(item.to)} />
+          <NavLink key={item.to} item={item} active={pathname === item.to || pathname.startsWith(item.to)} />
         ))}
       </div>
     </nav>

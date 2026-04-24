@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as SimulationRouteImport } from './routes/simulation'
 import { Route as PortfolioRouteImport } from './routes/portfolio'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as DiscoverRouteImport } from './routes/discover'
+import { Route as CreatorRouteImport } from './routes/creator'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IpIdRouteImport } from './routes/ip.$id'
 import { Route as CreatorSlugRouteImport } from './routes/creator.$slug'
@@ -27,6 +29,11 @@ const UploadRoute = UploadRouteImport.update({
 const StoreRoute = StoreRouteImport.update({
   id: '/store',
   path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimulationRoute = SimulationRouteImport.update({
+  id: '/simulation',
+  path: '/simulation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PortfolioRoute = PortfolioRouteImport.update({
@@ -44,6 +51,11 @@ const DiscoverRoute = DiscoverRouteImport.update({
   path: '/discover',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CreatorRoute = CreatorRouteImport.update({
+  id: '/creator',
+  path: '/creator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -55,9 +67,9 @@ const IpIdRoute = IpIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreatorSlugRoute = CreatorSlugRouteImport.update({
-  id: '/creator/$slug',
-  path: '/creator/$slug',
-  getParentRoute: () => rootRouteImport,
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => CreatorRoute,
 } as any)
 const ContentIdRoute = ContentIdRouteImport.update({
   id: '/content/$id',
@@ -67,9 +79,11 @@ const ContentIdRoute = ContentIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/creator': typeof CreatorRouteWithChildren
   '/discover': typeof DiscoverRoute
   '/marketplace': typeof MarketplaceRoute
   '/portfolio': typeof PortfolioRoute
+  '/simulation': typeof SimulationRoute
   '/store': typeof StoreRoute
   '/upload': typeof UploadRoute
   '/content/$id': typeof ContentIdRoute
@@ -78,9 +92,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/creator': typeof CreatorRouteWithChildren
   '/discover': typeof DiscoverRoute
   '/marketplace': typeof MarketplaceRoute
   '/portfolio': typeof PortfolioRoute
+  '/simulation': typeof SimulationRoute
   '/store': typeof StoreRoute
   '/upload': typeof UploadRoute
   '/content/$id': typeof ContentIdRoute
@@ -90,9 +106,11 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/creator': typeof CreatorRouteWithChildren
   '/discover': typeof DiscoverRoute
   '/marketplace': typeof MarketplaceRoute
   '/portfolio': typeof PortfolioRoute
+  '/simulation': typeof SimulationRoute
   '/store': typeof StoreRoute
   '/upload': typeof UploadRoute
   '/content/$id': typeof ContentIdRoute
@@ -103,9 +121,11 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/creator'
     | '/discover'
     | '/marketplace'
     | '/portfolio'
+    | '/simulation'
     | '/store'
     | '/upload'
     | '/content/$id'
@@ -114,9 +134,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/creator'
     | '/discover'
     | '/marketplace'
     | '/portfolio'
+    | '/simulation'
     | '/store'
     | '/upload'
     | '/content/$id'
@@ -125,9 +147,11 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/creator'
     | '/discover'
     | '/marketplace'
     | '/portfolio'
+    | '/simulation'
     | '/store'
     | '/upload'
     | '/content/$id'
@@ -137,13 +161,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CreatorRoute: typeof CreatorRouteWithChildren
   DiscoverRoute: typeof DiscoverRoute
   MarketplaceRoute: typeof MarketplaceRoute
   PortfolioRoute: typeof PortfolioRoute
+  SimulationRoute: typeof SimulationRoute
   StoreRoute: typeof StoreRoute
   UploadRoute: typeof UploadRoute
   ContentIdRoute: typeof ContentIdRoute
-  CreatorSlugRoute: typeof CreatorSlugRoute
   IpIdRoute: typeof IpIdRoute
 }
 
@@ -161,6 +186,13 @@ declare module '@tanstack/react-router' {
       path: '/store'
       fullPath: '/store'
       preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulation': {
+      id: '/simulation'
+      path: '/simulation'
+      fullPath: '/simulation'
+      preLoaderRoute: typeof SimulationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/portfolio': {
@@ -184,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscoverRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/creator': {
+      id: '/creator'
+      path: '/creator'
+      fullPath: '/creator'
+      preLoaderRoute: typeof CreatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -200,10 +239,10 @@ declare module '@tanstack/react-router' {
     }
     '/creator/$slug': {
       id: '/creator/$slug'
-      path: '/creator/$slug'
+      path: '/$slug'
       fullPath: '/creator/$slug'
       preLoaderRoute: typeof CreatorSlugRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CreatorRoute
     }
     '/content/$id': {
       id: '/content/$id'
@@ -215,15 +254,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface CreatorRouteChildren {
+  CreatorSlugRoute: typeof CreatorSlugRoute
+}
+
+const CreatorRouteChildren: CreatorRouteChildren = {
+  CreatorSlugRoute: CreatorSlugRoute,
+}
+
+const CreatorRouteWithChildren =
+  CreatorRoute._addFileChildren(CreatorRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CreatorRoute: CreatorRouteWithChildren,
   DiscoverRoute: DiscoverRoute,
   MarketplaceRoute: MarketplaceRoute,
   PortfolioRoute: PortfolioRoute,
+  SimulationRoute: SimulationRoute,
   StoreRoute: StoreRoute,
   UploadRoute: UploadRoute,
   ContentIdRoute: ContentIdRoute,
-  CreatorSlugRoute: CreatorSlugRoute,
   IpIdRoute: IpIdRoute,
 }
 export const routeTree = rootRouteImport
