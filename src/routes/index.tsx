@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, TrendingUp, FileText, Wrench, ImageIcon } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ContentCard } from "@/components/ContentCard";
-import { CONTENT, IP_ASSETS } from "@/lib/data";
 import heroCreator from "@/assets/hero-creator.png";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,8 +22,9 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
-  const featured = CONTENT.slice(0, 4);
-  const trendingIp = IP_ASSETS.slice(0, 3);
+  const { contentCatalog, ipCatalog } = useAppState();
+  const featured = contentCatalog.slice(0, 4);
+  const trendingIp = ipCatalog.slice(0, 3);
 
   return (
     <AppShell title="Orisale" subtitle="Welcome back, creator 👋">

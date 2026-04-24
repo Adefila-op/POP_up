@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrendingUp, Wallet, Coins, Library } from "lucide-react";
+import { TrendingUp, Wallet, Coins, Library, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { CONTENT, IP_ASSETS } from "@/lib/data";
+import { useAppState } from "@/lib/use-app-state";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
@@ -14,14 +15,46 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
-  // Mock holdings
-  const library = CONTENT.slice(0, 3);
-  const holdings = [
-    { ip: IP_ASSETS[0], shares: 50 },
-    { ip: IP_ASSETS[2], shares: 12 },
-  ];
+  const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance } =
+    useAppState();
+  const library = contentCatalog.filter((item) => ownedContentIds.includes(item.id));
+  const holdings = ipCatalog
+    .map((ip) => ({ ip, shares: ipHoldings[ip.id] ?? 0 }))
+    .filter((holding) => holding.shares > 0);
 
   const totalIp = holdings.reduce((s, h) => s + h.shares * h.ip.pricePerShare, 0);
+
+  if (!walletConnected) {
+    return (
+      <AppShell title="Portfolio" subtitle="Connect your wallet first">
+        <section className="rounded-3xl bg-card p-6 shadow-pop">
+          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+            <Wallet className="h-5 w-5" />
+          </span>
+          <h1 className="mt-4 text-2xl font-bold">Connect a wallet to unlock your portfolio</h1>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Your holdings, library, and pool positions stay hidden until a wallet is connected.
+          </p>
+          <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
+            <Mini label="Wallet" value="Required" />
+            <Mini label="Library" value="Locked" />
+            <Mini label="IP" value="Locked" />
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              connectWallet();
+              toast.success("Wallet connected");
+            }}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 font-semibold text-ink-foreground shadow-ink"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            Connect wallet
+          </button>
+        </section>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell title="Portfolio" subtitle="Your library, IP & pools">
@@ -30,12 +63,12 @@ function PortfolioPage() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs opacity-70">Total balance</p>
-            <p className="mt-1 text-3xl font-bold">${(totalIp + 245).toFixed(2)}</p>
+            <p className="mt-1 text-3xl font-bold">${(totalIp + cashBalance).toFixed(2)}</p>
           </div>
           <Wallet className="h-6 w-6 opacity-60" />
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
-          <Mini label="Cash" value="$245" />
+          <Mini label="Cash" value={`$${cashBalance.toFixed(2)}`} />
           <Mini label="IP value" value={`$${totalIp.toFixed(0)}`} />
         </div>
       </section>

@@ -35,6 +35,7 @@ import { ContentOpener } from "@/components/ContentOpener";
 import { CONTENT, creatorSlug, type ContentItem } from "@/lib/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/discover")({
   head: () => ({
@@ -113,8 +114,8 @@ const seedComments = (id: string, creator: string): Comment[] => [
   },
 ];
 
-const buildFeed = (): FeedItem[] =>
-  CONTENT.map((item, i) => ({
+const buildFeed = (items: ContentItem[]): FeedItem[] =>
+  items.map((item, i) => ({
     ...item,
     likes: 1240 + i * 317,
     caption:
@@ -131,12 +132,19 @@ const buildFeed = (): FeedItem[] =>
   }));
 
 function DiscoverPage() {
-  const [feed, setFeed] = useState<FeedItem[]>(() => buildFeed());
+  const {
+    contentCatalog,
+    followedCreatorSlugs,
+    savedContentIds,
+    likedContentIds,
+    ownedContentIds,
+    toggleFollowCreator,
+    toggleSavedContent,
+    toggleLikedContent,
+    purchaseContent,
+  } = useAppState();
+  const [feed, setFeed] = useState<FeedItem[]>(() => buildFeed(CONTENT));
   const [hidden, setHidden] = useState<Set<string>>(new Set());
-  const [following, setFollowing] = useState<Set<string>>(new Set());
-  const [saved, setSaved] = useState<Set<string>>(new Set());
-  const [liked, setLiked] = useState<Set<string>>(new Set());
-  const [bought, setBought] = useState<Set<string>>(new Set());
 
   const [activeComments, setActiveComments] = useState<string | null>(null);
   const [activeShare, setActiveShare] = useState<FeedItem | null>(null);
@@ -147,43 +155,28 @@ function DiscoverPage() {
   const visible = feed.filter((p) => !hidden.has(p.id));
   const commentPost = feed.find((p) => p.id === activeComments) ?? null;
 
-  const toggleLike = (id: string) =>
-    setLiked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
+  useEffect(() => {
+    setFeed((prev) => {
+      const nextIds = new Set(contentCatalog.map((item) => item.id));
+      const kept = prev.filter((item) => nextIds.has(item.id));
+      const keptIds = new Set(kept.map((item) => item.id));
+      const additions = buildFeed(contentCatalog).filter((item) => !keptIds.has(item.id));
+      return additions.length ? [...additions, ...kept] : kept;
     });
+  }, [contentCatalog]);
+
+  const toggleLike = (id: string) => {
+    toggleLikedContent(id);
+  };
 
   const toggleSave = (id: string) => {
-    setSaved((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        toast("Removed from saved");
-      } else {
-        next.add(id);
-        toast.success("Saved to your collection");
-      }
-      return next;
-    });
+    const next = toggleSavedContent(id);
+    toast(next ? "Saved to your collection" : "Removed from saved");
   };
 
   const toggleFollow = (creator: string) => {
-    setFollowing((prev) => {
-      const next = new Set(prev);
-      if (next.has(creator)) {
-        next.delete(creator);
-        toast(`Unfollowed ${creator}`);
-      } else {
-        next.add(creator);
-        toast.success(`Following ${creator}`);
-      }
-      return next;
-    });
+    const next = toggleFollowCreator(creatorSlug(creator));
+    toast(next ? `Following ${creator}` : `Unfollowed ${creator}`);
   };
 
   const hidePost = (id: string) => {
@@ -193,7 +186,7 @@ function DiscoverPage() {
   };
 
   const confirmBuy = (post: FeedItem) => {
-    setBought((prev) => new Set(prev).add(post.id));
+    purchaseContent(post.id);
     toast.success(
       post.price === 0 ? "Added to your library" : `Purchased ${post.title} for $${post.price}`,
       {
@@ -244,7 +237,7 @@ function DiscoverPage() {
       {/* Stories rail */}
       <div className="-mx-5 mb-4 flex gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {feed.slice(0, 8).map((p) => {
-          const isFollowing = following.has(p.creator);
+          const isFollowing = followedCreatorSlugs.includes(creatorSlug(p.creator));
           return (
             <button
               key={`story-${p.id}`}
@@ -278,10 +271,10 @@ function DiscoverPage() {
           <FeedPost
             key={post.id}
             post={post}
-            liked={liked.has(post.id)}
-            saved={saved.has(post.id)}
-            bought={bought.has(post.id)}
-            following={following.has(post.creator)}
+            liked={likedContentIds.includes(post.id)}
+            saved={savedContentIds.includes(post.id)}
+            bought={ownedContentIds.includes(post.id)}
+            following={followedCreatorSlugs.includes(creatorSlug(post.creator))}
             onLike={() => toggleLike(post.id)}
             onSave={() => toggleSave(post.id)}
             onFollow={() => toggleFollow(post.creator)}

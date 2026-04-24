@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -14,6 +14,7 @@ import { AppShell } from "@/components/AppShell";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { ContentType } from "@/lib/data";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -33,11 +34,49 @@ const types: { id: ContentType; label: string; icon: typeof FileText; cls: strin
 
 function UploadPage() {
   const navigate = useNavigate();
+  const {
+    signedIn,
+    creatorWhitelisted,
+    signIn,
+    enableCreatorWhitelist,
+    publishContent,
+  } = useAppState();
   const [type, setType] = useState<ContentType>("pdf");
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("19");
   const [desc, setDesc] = useState("");
   const [tokenize, setTokenize] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fileAccept = useMemo(
+    () =>
+      ({
+        pdf: ".pdf,application/pdf",
+        art: ".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml",
+        tool: ".zip,.dmg,.exe,.msi,application/zip",
+      })[type],
+    [type],
+  );
+
+  const uploadHint =
+    type === "pdf"
+      ? "Upload a PDF buyers can instantly read after purchase."
+      : type === "art"
+        ? "Upload image or SVG assets buyers can preview in the gallery."
+        : "Upload the installer or archive buyers can download.";
+
+  const onPickFile = (selected: File | null) => {
+    if (!selected) return;
+
+    if (type === "pdf" && selected.type !== "application/pdf" && !selected.name.endsWith(".pdf")) {
+      toast.error("Please upload a valid PDF file.");
+      return;
+    }
+
+    setFile(selected);
+    toast.success(`${selected.name} attached`);
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +84,95 @@ function UploadPage() {
       toast.error("Please add a title");
       return;
     }
-    toast.success("Listing created!", {
-      description: tokenize ? "Also listed for IP fractionalization." : "Live in your store.",
+    if (!file) {
+      toast.error(type === "pdf" ? "Please upload a PDF file." : "Please upload a file.");
+      return;
+    }
+    const result = publishContent({
+      type,
+      title,
+      description: desc || `New ${type} release by demo creator.`,
+      price: Number(price) || 0,
+      tokenize,
+      fileName: file.name,
     });
-    setTimeout(() => navigate({ to: "/store" }), 800);
+
+    toast.success("Listing created!", {
+      description: tokenize
+        ? `${file.name} uploaded and listed for IP fractionalization.`
+        : `${file.name} is now live in your store.`,
+    });
+    setTimeout(() => navigate({ to: "/content/$id", params: { id: result.contentId } }), 800);
   };
+
+  if (!signedIn || !creatorWhitelisted) {
+    return (
+      <div className="min-h-screen bg-background pb-32">
+        <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+          <div className="mx-auto flex max-w-md items-center justify-between px-5 py-4">
+            <button
+              onClick={() => navigate({ to: "/" })}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary"
+              aria-label="Back"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <h1 className="font-bold">Creator access</h1>
+            <span className="w-10" />
+          </div>
+        </header>
+
+        <div className="mx-auto max-w-md space-y-5 px-5 pt-6">
+          <div className="rounded-3xl bg-card p-6 shadow-pop">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Creator Console
+            </p>
+            <h2 className="mt-2 text-2xl font-bold">Sign in and get whitelisted to publish</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              New creator listings are gated behind sign-in and a creator whitelist check before
+              they can go live.
+            </p>
+
+            <div className="mt-5 space-y-3">
+              <AccessStep
+                done={signedIn}
+                title="1. Sign in"
+                body="Confirm your creator identity before you can open the publishing flow."
+                actionLabel={signedIn ? "Signed in" : "Sign in"}
+                onAction={() => {
+                  signIn();
+                  toast.success("Signed in as demo creator");
+                }}
+              />
+              <AccessStep
+                done={creatorWhitelisted}
+                title="2. Creator whitelist"
+                body="Only whitelisted creators can launch new drops in this demo flow."
+                actionLabel={creatorWhitelisted ? "Whitelisted" : "Join whitelist"}
+                onAction={() => {
+                  if (!signedIn) {
+                    toast.error("Sign in first to request creator access.");
+                    return;
+                  }
+                  enableCreatorWhitelist();
+                  toast.success("Creator whitelist approved");
+                }}
+              />
+            </div>
+
+            <button
+              type="button"
+              disabled={!signedIn || !creatorWhitelisted}
+              onClick={() => toast.success("Creator access unlocked")}
+              className="mt-5 w-full rounded-full bg-ink py-3.5 font-semibold text-ink-foreground shadow-ink disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {signedIn && creatorWhitelisted ? "Access granted" : "Complete access checks"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -130,7 +253,11 @@ function UploadPage() {
         {/* File dropzone */}
         <div>
           <label className="mb-2 block text-sm font-semibold">Upload file</label>
-          <div className="flex flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-border bg-card py-10 text-center transition-colors hover:border-primary">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-border bg-card py-10 text-center transition-colors hover:border-primary"
+          >
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-soft text-primary">
               <Upload className="h-5 w-5" />
             </span>
@@ -139,8 +266,18 @@ function UploadPage() {
               {type === "art" && "Drop your artwork (PNG, JPG, SVG)"}
               {type === "tool" && "Drop your tool package (.zip, .dmg, .exe)"}
             </p>
-            <p className="text-xs text-muted-foreground">Up to 500 MB</p>
-          </div>
+            <p className="text-xs text-muted-foreground">{uploadHint}</p>
+            <p className="text-xs text-muted-foreground">
+              {file ? `Attached: ${file.name}` : "Tap to choose a file â€” up to 500 MB"}
+            </p>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={fileAccept}
+            className="hidden"
+            onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+          />
         </div>
 
         <Field label="Title">
@@ -204,6 +341,47 @@ function UploadPage() {
           Publish listing
         </button>
       </form>
+    </div>
+  );
+}
+
+function AccessStep({
+  done,
+  title,
+  body,
+  actionLabel,
+  onAction,
+}: {
+  done: boolean;
+  title: string;
+  body: string;
+  actionLabel: string;
+  onAction: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-background p-4">
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+            done ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground",
+          )}
+        >
+          {done ? <Check className="h-3.5 w-3.5" /> : title.split(".")[0]}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{title}</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onAction}
+        disabled={done}
+        className="mt-3 w-full rounded-full bg-secondary py-2 text-sm font-semibold disabled:opacity-60"
+      >
+        {actionLabel}
+      </button>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -13,11 +13,13 @@ import {
   UserCheck,
   Share2,
   Mail,
+  X,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { CREATORS, getCreator, getCreatorContent, getCreatorIp } from "@/lib/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/creator/$slug")({
   head: ({ params }) => {
@@ -48,8 +50,9 @@ function CreatorPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const creator = getCreator(slug);
-  const [following, setFollowing] = useState(false);
   const [tab, setTab] = useState<"content" | "ip">("content");
+  const [storyOpen, setStoryOpen] = useState(false);
+  const { contentCatalog, ipCatalog, followedCreatorSlugs, toggleFollowCreator } = useAppState();
 
   if (!creator) {
     return (
@@ -71,13 +74,14 @@ function CreatorPage() {
     );
   }
 
-  const content = getCreatorContent(creator.name);
-  const ips = getCreatorIp(creator.name);
+  const content = contentCatalog.filter((item) => item.creator === creator.name);
+  const ips = ipCatalog.filter((ip) => ip.creator === creator.name);
+  const following = followedCreatorSlugs.includes(slug);
   const followerCount = creator.followers + (following ? 1 : 0);
 
   const toggleFollow = () => {
-    setFollowing((v) => !v);
-    toast.success(following ? `Unfollowed ${creator.name}` : `Following ${creator.name}`);
+    const next = toggleFollowCreator(slug);
+    toast.success(next ? `Following ${creator.name}` : `Unfollowed ${creator.name}`);
   };
 
   const share = async () => {
@@ -120,9 +124,14 @@ function CreatorPage() {
         {/* Identity card */}
         <div className="rounded-3xl bg-card p-5 shadow-pop">
           <div className="flex items-end gap-4">
-            <div className="relative -mt-12 flex h-20 w-20 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary to-warning text-lg font-bold text-primary-foreground shadow-soft">
+            <button
+              type="button"
+              onClick={() => setStoryOpen(true)}
+              className="relative -mt-12 flex h-20 w-20 items-center justify-center rounded-full border-4 border-card bg-gradient-to-br from-primary to-warning text-lg font-bold text-primary-foreground shadow-soft"
+              aria-label="Open creator story"
+            >
               {creator.avatar}
-            </div>
+            </button>
             <div className="ml-auto flex gap-2">
               <button
                 onClick={toggleFollow}
@@ -278,6 +287,15 @@ function CreatorPage() {
           </div>
         )}
       </div>
+
+      {storyOpen && (
+        <CreatorPortfolioStory
+          creator={creator}
+          contentCount={content.length}
+          ipCount={ips.length}
+          onClose={() => setStoryOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -316,4 +334,118 @@ function TabBtn({
 function fmt(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1).replace(/\.0$/, "")}K`;
   return `${n}`;
+}
+
+function CreatorPortfolioStory({
+  creator,
+  contentCount,
+  ipCount,
+  onClose,
+}: {
+  creator: NonNullable<ReturnType<typeof getCreator>>;
+  contentCount: number;
+  ipCount: number;
+  onClose: () => void;
+}) {
+  const slides = useMemo(
+    () => [
+      {
+        title: `${creator.name}'s creator story`,
+        body: creator.bio,
+      },
+      {
+        title: "Portfolio snapshot",
+        body: `${contentCount} active content listings and ${ipCount} live IP positions in the demo portfolio.`,
+      },
+      {
+        title: "Audience",
+        body: `${fmt(creator.followers)} followers tracking this creator across drops, IP launches, and updates.`,
+      },
+    ],
+    [contentCount, creator.bio, creator.followers, creator.name, ipCount],
+  );
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setIndex((prev) => {
+        if (prev >= slides.length - 1) {
+          window.clearInterval(timer);
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 3200);
+
+    return () => window.clearInterval(timer);
+  }, [slides.length]);
+
+  const slide = slides[index];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black text-white">
+      <img src={creator.cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/85" />
+
+      <div className="relative mx-auto flex h-full max-w-md flex-col px-4 pb-8 pt-4">
+        <div className="flex gap-1.5">
+          {slides.map((_, i) => (
+            <span
+              key={i}
+              className={cn("h-1 flex-1 rounded-full", i <= index ? "bg-white" : "bg-white/30")}
+            />
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 font-bold">
+              {creator.avatar}
+            </div>
+            <div>
+              <p className="text-sm font-semibold">{creator.name}</p>
+              <p className="text-xs text-white/70">@{creator.slug}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15"
+            aria-label="Close creator story"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-auto rounded-[2rem] bg-black/35 p-6 backdrop-blur">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+            Story view
+          </p>
+          <h2 className="mt-3 text-3xl font-bold leading-tight">{slide.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-white/80">{slide.body}</p>
+          <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs">
+            <StoryStat label="Followers" value={fmt(creator.followers)} />
+            <StoryStat label="Content" value={`${contentCount}`} />
+            <StoryStat label="IP" value={`${ipCount}`} />
+          </div>
+          <button
+            type="button"
+            onClick={() => setIndex((prev) => (prev < slides.length - 1 ? prev + 1 : prev))}
+            className="mt-5 w-full rounded-full bg-white py-3 text-sm font-semibold text-foreground"
+          >
+            {index < slides.length - 1 ? "Next story" : "Story finished"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StoryStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/12 px-3 py-3">
+      <p className="text-base font-bold">{value}</p>
+      <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/65">{label}</p>
+    </div>
+  );
 }

@@ -5,6 +5,8 @@ import { AppShell } from "@/components/AppShell";
 import { getIp } from "@/lib/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAppState } from "@/lib/use-app-state";
+import type { MarketListing } from "@/lib/app-state-context";
 
 export const Route = createFileRoute("/ip/$id")({
   component: IpDetailPage,
@@ -15,64 +17,38 @@ export const Route = createFileRoute("/ip/$id")({
   ),
 });
 
-interface Listing {
-  id: string;
-  seller: string;
-  avatar: string;
-  qty: number;
-  price: number; // per share / NFT
-  listedAgo: string;
-}
-
-const seedListings = (id: string, basePrice: number): Listing[] => {
-  // Deterministic-ish seed list per IP
-  const seed = id.charCodeAt(id.length - 1) || 1;
-  const sellers = [
-    { n: "Mira O.", a: "MO" },
-    { n: "Devon L.", a: "DL" },
-    { n: "Eden C.", a: "EC" },
-    { n: "Otto V.", a: "OV" },
-    { n: "Kai R.", a: "KR" },
-    { n: "Nova S.", a: "NS" },
-  ];
-  return sellers.map((s, i) => {
-    const drift = ((seed + i * 3) % 9) - 4; // -4..+4
-    const price = Math.max(0.5, +(basePrice + drift * (basePrice * 0.05)).toFixed(2));
-    const qty = ((seed + i) % 5) + 1;
-    const ages = ["2m ago", "14m ago", "1h ago", "3h ago", "9h ago", "1d ago"];
-    return {
-      id: `${id}-l${i}`,
-      seller: s.n,
-      avatar: s.a,
-      qty,
-      price,
-      listedAgo: ages[i % ages.length],
-    };
-  });
-};
-
 function IpDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const ip = getIp(id);
+  const {
+    ipCatalog,
+    marketListings,
+    ipHoldings,
+    cashBalance,
+    buyIpListing,
+    createIpListing,
+    cancelIpListing,
+    sellIpToPool,
+  } = useAppState();
+  const ip = ipCatalog.find((asset) => asset.id === id) ?? getIp(id);
 
-  const [listings, setListings] = useState<Listing[]>(() =>
-    ip ? seedListings(ip.id, ip.pricePerShare) : [],
-  );
   const [showListForm, setShowListForm] = useState(false);
   const [listQty, setListQty] = useState(1);
   const [listPrice, setListPrice] = useState(ip?.pricePerShare ?? 1);
 
+  const listings = useMemo(
+    () => marketListings.filter((listing) => listing.ipId === id),
+    [id, marketListings],
+  );
   const sorted = useMemo(() => [...listings].sort((a, b) => a.price - b.price), [listings]);
+  const ownedShares = ipHoldings[id] ?? 0;
 
   const floor = sorted[0]?.price ?? 0;
-  const totalSupply = listings.reduce((s, l) => s + l.qty, 0);
+  const totalSupply = listings.reduce((sum, listing) => sum + listing.qty, 0);
   const avgPrice = totalSupply
-    ? listings.reduce((s, l) => s + l.price * l.qty, 0) / totalSupply
+    ? listings.reduce((sum, listing) => sum + listing.price * listing.qty, 0) / totalSupply
     : 0;
-  // Mock liquidity available for buyback (in USD)
   const liquidity = ip ? Math.round(ip.monthlyRevenue * 4.2) : 0;
-  // Buyback = avg price discounted by available liquidity coverage
   const coverage =
     avgPrice * totalSupply > 0 ? Math.min(1, liquidity / (avgPrice * totalSupply)) : 0;
   const buybackPrice = +(avgPrice * (0.85 + coverage * 0.1)).toFixed(2);
@@ -85,33 +61,37 @@ function IpDetailPage() {
     );
   }
 
-  const handleBuy = (l: Listing) => {
-    setListings((prev) => prev.filter((x) => x.id !== l.id));
-    toast.success(`Bought ${l.qty}× ${ip.title}`, {
-      description: `From ${l.seller} at $${l.price} each`,
+  const handleBuy = (listing: MarketListing) => {
+    const result = buyIpListing(listing.id);
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not complete purchase.");
+      return;
+    }
+
+    toast.success(`Bought ${listing.qty}x ${ip.title}`, {
+      description: `From ${listing.seller} at $${listing.price} each`,
     });
   };
 
   const handleList = (e: React.FormEvent) => {
     e.preventDefault();
-    if (listQty < 1 || listPrice <= 0) {
-      toast.error("Enter a valid quantity and price");
+    const result = createIpListing({ ipId: ip.id, qty: listQty, price: +listPrice });
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not create listing.");
       return;
     }
-    const newListing: Listing = {
-      id: `${ip.id}-u-${Date.now()}`,
-      seller: "You",
-      avatar: "YO",
-      qty: listQty,
-      price: +listPrice,
-      listedAgo: "just now",
-    };
-    setListings((prev) => [newListing, ...prev]);
+
     setShowListForm(false);
     toast.success(`Listed ${listQty} for $${listPrice} each`);
   };
 
   const handleBuyback = () => {
+    const result = sellIpToPool({ ipId: ip.id, qty: 1, pricePerShare: buybackPrice });
+    if (!result.ok) {
+      toast.error(result.reason ?? "Could not sell to pool.");
+      return;
+    }
+
     toast.success(`Buyback offer accepted at $${buybackPrice}`, {
       description: `Pool liquidity: $${liquidity.toLocaleString()}`,
     });
@@ -132,7 +112,6 @@ function IpDetailPage() {
       </div>
 
       <div className="mx-auto -mt-12 max-w-md space-y-5 px-5">
-        {/* Header card */}
         <div className="rounded-3xl bg-card p-6 shadow-pop">
           <div className="flex items-start justify-between">
             <div className="min-w-0">
@@ -157,11 +136,10 @@ function IpDetailPage() {
           <div className="mt-5 grid grid-cols-3 gap-2">
             <Stat label="Floor" value={`$${floor.toFixed(2)}`} highlight />
             <Stat label="Avg price" value={`$${avgPrice.toFixed(2)}`} />
-            <Stat label="Listed" value={`${totalSupply}`} />
+            <Stat label="Owned" value={`${ownedShares}`} />
           </div>
         </div>
 
-        {/* Buyback card */}
         <div className="rounded-3xl bg-ink p-5 text-ink-foreground shadow-ink">
           <div className="flex items-center gap-2 text-xs opacity-80">
             <RefreshCcw className="h-3.5 w-3.5" /> Protocol buyback
@@ -169,13 +147,13 @@ function IpDetailPage() {
           <div className="mt-2 flex items-end justify-between gap-3">
             <div>
               <p className="text-3xl font-bold">${buybackPrice}</p>
-              <p className="text-[11px] opacity-70">per share — instant exit</p>
+              <p className="text-[11px] opacity-70">per share - instant exit</p>
             </div>
             <button
               onClick={handleBuyback}
               className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105 active:scale-95"
             >
-              Sell to pool
+              Sell 1 to pool
             </button>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-3 text-[11px]">
@@ -184,16 +162,20 @@ function IpDetailPage() {
               <p className="text-sm font-semibold">${liquidity.toLocaleString()}</p>
             </div>
             <div>
-              <p className="opacity-60">Avg price · coverage</p>
+              <p className="opacity-60">Avg price / coverage</p>
               <p className="text-sm font-semibold">
-                ${avgPrice.toFixed(2)} · {(coverage * 100).toFixed(0)}%
+                ${avgPrice.toFixed(2)} / {(coverage * 100).toFixed(0)}%
               </p>
             </div>
           </div>
         </div>
 
-        {/* Listings */}
         <div className="rounded-3xl bg-card p-5 shadow-soft">
+          <div className="mb-4 grid grid-cols-2 gap-3">
+            <Stat label="Cash balance" value={`$${cashBalance.toFixed(2)}`} />
+            <Stat label="Listed supply" value={`${totalSupply}`} />
+          </div>
+
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary-soft text-primary">
@@ -246,7 +228,7 @@ function IpDetailPage() {
                 </label>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Listing below the floor (${floor.toFixed(2)}) becomes the new floor.
+                You currently have {ownedShares} shares available to list.
               </p>
               <button
                 type="submit"
@@ -264,23 +246,23 @@ function IpDetailPage() {
                 No active listings yet.
               </p>
             )}
-            {sorted.map((l, i) => {
+            {sorted.map((listing, i) => {
               const isFloor = i === 0;
-              const isYou = l.seller === "You";
+              const isYou = listing.seller === "You";
               return (
                 <div
-                  key={l.id}
+                  key={listing.id}
                   className={cn(
                     "flex items-center gap-3 rounded-2xl border bg-background p-3 transition-colors",
                     isFloor ? "border-primary/40 bg-primary-soft" : "border-border",
                   )}
                 >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-warning text-[11px] font-bold text-primary-foreground">
-                    {l.avatar}
+                    {listing.avatar}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="truncate text-sm font-semibold">{l.seller}</p>
+                      <p className="truncate text-sm font-semibold">{listing.seller}</p>
                       {isFloor && (
                         <span className="rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary-foreground">
                           Floor
@@ -293,18 +275,18 @@ function IpDetailPage() {
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
-                      {l.qty} × · {l.listedAgo}
+                      {listing.qty}x • {listing.listedAgo}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-base font-bold">${l.price.toFixed(2)}</p>
+                    <p className="text-base font-bold">${listing.price.toFixed(2)}</p>
                     <p className="text-[10px] text-muted-foreground">
-                      total ${(l.price * l.qty).toFixed(2)}
+                      total ${(listing.price * listing.qty).toFixed(2)}
                     </p>
                   </div>
                   {!isYou ? (
                     <button
-                      onClick={() => handleBuy(l)}
+                      onClick={() => handleBuy(listing)}
                       className="ml-1 inline-flex items-center gap-1 rounded-full bg-ink px-3 py-2 text-xs font-semibold text-ink-foreground transition-transform hover:scale-105 active:scale-95"
                     >
                       <ShoppingBag className="h-3.5 w-3.5" />
@@ -312,7 +294,10 @@ function IpDetailPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => setListings((prev) => prev.filter((x) => x.id !== l.id))}
+                      onClick={() => {
+                        cancelIpListing(listing.id);
+                        toast("Listing cancelled");
+                      }}
                       className="ml-1 rounded-full border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground"
                     >
                       Cancel

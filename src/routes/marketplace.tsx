@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TrendingUp, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { IP_ASSETS } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/marketplace")({
   head: () => ({
@@ -23,6 +23,8 @@ export const Route = createFileRoute("/marketplace")({
 });
 
 function MarketplacePage() {
+  const { ipCatalog } = useAppState();
+
   return (
     <AppShell title="Marketplace" subtitle="Open listings from holders">
       <div className="mb-4 flex items-center gap-3 rounded-2xl bg-primary-soft p-4">
@@ -34,7 +36,7 @@ function MarketplacePage() {
       </div>
 
       <div className="space-y-3">
-        {IP_ASSETS.map((ip) => (
+        {ipCatalog.map((ip) => (
           <Link
             key={ip.id}
             to="/ip/$id"

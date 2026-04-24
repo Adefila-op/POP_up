@@ -2,8 +2,9 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { ContentCard } from "@/components/ContentCard";
-import { CONTENT, type ContentType } from "@/lib/data";
+import type { ContentType } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/store")({
   head: () => ({
@@ -32,7 +33,9 @@ const filters: { id: "all" | ContentType; label: string }[] = [
 
 function StorePage() {
   const [active, setActive] = useState<"all" | ContentType>("all");
-  const items = active === "all" ? CONTENT : CONTENT.filter((c) => c.type === active);
+  const { contentCatalog } = useAppState();
+  const items =
+    active === "all" ? contentCatalog : contentCatalog.filter((content) => content.type === active);
 
   return (
     <AppShell title="Store" subtitle="Buy & view digital content">

@@ -16,6 +16,7 @@ import { ContentOpener } from "@/components/ContentOpener";
 import { creatorSlug, getContent } from "@/lib/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAppState } from "@/lib/use-app-state";
 
 export const Route = createFileRoute("/content/$id")({
   component: ContentDetailPage,
@@ -29,9 +30,10 @@ export const Route = createFileRoute("/content/$id")({
 function ContentDetailPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const item = getContent(id);
-  const [purchased, setPurchased] = useState(false);
+  const { contentCatalog, ownedContentIds, purchaseContent } = useAppState();
+  const item = contentCatalog.find((content) => content.id === id) ?? getContent(id);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const purchased = ownedContentIds.includes(id);
 
   if (!item) {
     return (
@@ -42,7 +44,7 @@ function ContentDetailPage() {
   }
 
   const handlePurchase = () => {
-    setPurchased(true);
+    purchaseContent(item.id);
     toast.success(item.price === 0 ? "Added to your library" : `Purchased for $${item.price}`);
   };
 
