@@ -120,7 +120,6 @@ function UploadPage() {
       toast.error((error as Error).message || "Failed to publish");
     }
   };
-  };
 
   if (!signedIn || !creatorWhitelisted) {
     return (
