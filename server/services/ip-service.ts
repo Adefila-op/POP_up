@@ -4,9 +4,9 @@
  */
 
 import { eq, and } from "drizzle-orm";
-import { DatabaseClient, schema } from "@/server/db/client";
-import type { IP, IPStatus } from "@/server/db/types";
-import { generateId } from "@/server/utils/id-generator";
+import { DatabaseClient, schema } from "../db/client";
+import type { IP, IPStatus } from "../db/types";
+import { generateId } from "../utils/id-generator";
 
 interface CreateIPInput {
   creatorId: string;

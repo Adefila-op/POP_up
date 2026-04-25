@@ -3,20 +3,20 @@
  */
 
 import { Hono } from "hono";
-import { UserService } from "@/server/services/user-service";
-import { authenticateRequest, requireAuth, optionalAuthenticate } from "@/server/middleware/auth";
+import { UserService } from "../services/user-service";
+import { authenticateRequest, requireAuth, optionalAuthenticate } from "../middleware/auth";
 import {
   validateEmail,
   validateUsername,
   ValidationError,
-} from "@/server/utils/validation";
+} from "../utils/validation";
 import {
   createSuccessResponse,
   createHTTPResponse,
   handleError,
   AppError,
   ERROR_CODES,
-} from "@/server/utils/errors";
+} from "../utils/errors";
 
 export interface UserRoutesOptions {
   userService: UserService;

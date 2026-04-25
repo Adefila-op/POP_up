@@ -14,7 +14,7 @@ COPY tsconfig.json ./
 COPY vite.config.ts ./
 
 # Build API with esbuild (bundle all dependencies)
-RUN npx esbuild server/entry-node.ts --bundle --platform=node --target=node18 --outfile=dist/api.js --external:postgres
+RUN npx esbuild server/entry-node.ts --bundle --platform=node --target=node20 --outfile=dist/api.js --external:postgres
 
 # Expose API port
 EXPOSE 3000

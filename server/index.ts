@@ -5,15 +5,15 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { initializeDatabase } from "@/server/db/client";
-import { IPService } from "@/server/services/ip-service";
-import { TransactionService } from "@/server/services/transaction-service";
-import { LiquidityService } from "@/server/services/liquidity-service";
-import { UserService } from "@/server/services/user-service";
-import { createIPRoutes } from "@/server/routes/ip-routes";
-import { createTransactionRoutes } from "@/server/routes/transaction-routes";
-import { createUserRoutes } from "@/server/routes/user-routes";
-import { createHTTPResponse, createSuccessResponse } from "@/server/utils/errors";
+import { initializeDatabase } from "./db/client";
+import { IPService } from "./services/ip-service";
+import { TransactionService } from "./services/transaction-service";
+import { LiquidityService } from "./services/liquidity-service";
+import { UserService } from "./services/user-service";
+import { createIPRoutes } from "./routes/ip-routes";
+import { createTransactionRoutes } from "./routes/transaction-routes";
+import { createUserRoutes } from "./routes/user-routes";
+import { createHTTPResponse, createSuccessResponse } from "./utils/errors";
 
 export interface Env {
   DB: D1Database;

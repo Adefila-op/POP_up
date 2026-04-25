@@ -3,9 +3,9 @@
  * Handles wallet signature verification and user authentication
  */
 
-import { AppError, ERROR_CODES } from "@/server/utils/errors";
-import { UserService } from "@/server/services/user-service";
-import type { User } from "@/server/db/types";
+import { AppError, ERROR_CODES } from "../utils/errors";
+import { UserService } from "../services/user-service";
+import type { User } from "../db/types";
 
 export interface AuthContext {
   user: User;

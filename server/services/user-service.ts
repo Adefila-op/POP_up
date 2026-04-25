@@ -3,9 +3,9 @@
  */
 
 import { eq } from "drizzle-orm";
-import { DatabaseClient, schema } from "@/server/db/client";
-import type { User } from "@/server/db/types";
-import { generateId } from "@/server/utils/id-generator";
+import { DatabaseClient, schema } from "../db/client";
+import type { User } from "../db/types";
+import { generateId } from "../utils/id-generator";
 
 interface CreateUserInput {
   walletAddress: string;

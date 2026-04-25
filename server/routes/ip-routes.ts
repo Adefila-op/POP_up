@@ -3,24 +3,24 @@
  */
 
 import { Hono } from "hono";
-import { DatabaseClient } from "@/server/db/client";
-import { IPService } from "@/server/services/ip-service";
-import { TransactionService } from "@/server/services/transaction-service";
-import { LiquidityService } from "@/server/services/liquidity-service";
-import { UserService } from "@/server/services/user-service";
-import { authenticateRequest, requireAuth, optionalAuthenticate } from "@/server/middleware/auth";
+import { DatabaseClient } from "../db/client";
+import { IPService } from "../services/ip-service";
+import { TransactionService } from "../services/transaction-service";
+import { LiquidityService } from "../services/liquidity-service";
+import { UserService } from "../services/user-service";
+import { authenticateRequest, requireAuth, optionalAuthenticate } from "../middleware/auth";
 import {
   validateCreateIPInput,
   ValidationError,
-} from "@/server/utils/validation";
+} from "../utils/validation";
 import {
   createSuccessResponse,
   createHTTPResponse,
   handleError,
   AppError,
   ERROR_CODES,
-} from "@/server/utils/errors";
-import type { AuthContext } from "@/server/middleware/auth";
+} from "../utils/errors";
+import type { AuthContext } from "../middleware/auth";
 
 export interface IPRoutesOptions {
   db: DatabaseClient;
