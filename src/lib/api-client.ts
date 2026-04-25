@@ -1,0 +1,298 @@
+/**
+ * API Client - Centralized API communication layer
+ * Handles all requests to backend with authentication
+ */
+
+export interface User {
+  id: string;
+  wallet_address: string;
+  username: string;
+  email?: string;
+  is_creator: boolean;
+  cash_balance: number;
+  profile_picture_url?: string;
+  bio?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IP {
+  id: string;
+  creator_id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  cover_image_url?: string;
+  status: "CREATED" | "LAUNCH_PHASE" | "PUBLIC_TRADING" | "MATURE";
+  current_price: number;
+  floor_price: number;
+  total_tokens_minted: number;
+  liquidity_pool_usd: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Transaction {
+  id: string;
+  type: "BUY" | "SELL" | "BURN_SHARE";
+  status: "PENDING" | "COMPLETED" | "FAILED";
+  ip_id: string;
+  buyer_id?: string;
+  seller_id?: string;
+  amount_tokens: number;
+  price_per_token: number;
+  total_price_usd: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TokenHolder {
+  id: string;
+  ip_id: string;
+  user_id: string;
+  active_balance: number;
+  burned_balance: number;
+  average_buy_price: number;
+}
+
+// Get API base URL from environment or use default
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== "undefined" &&
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://popup-production.up.railway.app");
+
+/**
+ * Generic API call wrapper
+ */
+async function apiCall<T>(
+  endpoint: string,
+  method = "GET",
+  body?: any
+): Promise<T> {
+  const token = localStorage.getItem("auth_token");
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const url = `${API_BASE}${endpoint}`;
+  console.log(`[API] ${method} ${url}`);
+
+  try {
+    const response = await fetch(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || `HTTP ${response.status}`);
+    }
+
+    return data.data || data;
+  } catch (error) {
+    console.error(`[API Error] ${method} ${endpoint}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * User/Authentication API
+ */
+export const authAPI = {
+  /**
+   * Login with wallet signature
+   */
+  login: async (
+    walletAddress: string,
+    message: string,
+    signature: string
+  ): Promise<{ user: User; token: string }> => {
+    return apiCall("/api/auth/login", "POST", {
+      walletAddress,
+      message,
+      signature,
+    });
+  },
+
+  /**
+   * Get current user profile
+   */
+  getProfile: async (): Promise<User> => {
+    return apiCall("/api/auth/me", "GET");
+  },
+
+  /**
+   * Update current user profile
+   */
+  updateProfile: async (updates: Partial<User>): Promise<User> => {
+    return apiCall("/api/auth/me", "PUT", updates);
+  },
+};
+
+/**
+ * User API
+ */
+export const userAPI = {
+  /**
+   * Get user by ID
+   */
+  getById: async (id: string): Promise<User> => {
+    return apiCall(`/api/users/${id}`, "GET");
+  },
+
+  /**
+   * Deposit cash (test endpoint)
+   */
+  deposit: async (amount: number): Promise<User> => {
+    return apiCall("/api/users/deposit", "POST", { amount });
+  },
+
+  /**
+   * Withdraw cash (test endpoint)
+   */
+  withdraw: async (amount: number): Promise<User> => {
+    return apiCall("/api/users/withdraw", "POST", { amount });
+  },
+};
+
+/**
+ * IP Asset API
+ */
+export const ipAPI = {
+  /**
+   * Create new IP asset
+   */
+  create: async (data: {
+    title: string;
+    description?: string;
+    category?: string;
+    coverImageUrl?: string;
+    initialLiquidityUSD: number;
+    launchDurationDays: number;
+  }): Promise<IP> => {
+    return apiCall("/api/ips", "POST", data);
+  },
+
+  /**
+   * Get IP by ID
+   */
+  getById: async (id: string): Promise<IP> => {
+    return apiCall(`/api/ips/${id}`, "GET");
+  },
+
+  /**
+   * List all IPs
+   */
+  list: async (status?: string): Promise<IP[]> => {
+    const query = status ? `?status=${status}` : "";
+    return apiCall(`/api/ips${query}`, "GET");
+  },
+
+  /**
+   * Get IPs by creator
+   */
+  getByCreator: async (creatorId: string): Promise<IP[]> => {
+    return apiCall(`/api/ips?creatorId=${creatorId}`, "GET");
+  },
+
+  /**
+   * Get token holders for an IP
+   */
+  getHolders: async (ipId: string): Promise<TokenHolder[]> => {
+    return apiCall(`/api/ips/${ipId}/holders`, "GET");
+  },
+
+  /**
+   * Get transactions for an IP
+   */
+  getTransactions: async (ipId: string): Promise<Transaction[]> => {
+    return apiCall(`/api/ips/${ipId}/transactions`, "GET");
+  },
+
+  /**
+   * Update IP status
+   */
+  updateStatus: async (
+    ipId: string,
+    status: "CREATED" | "LAUNCH_PHASE" | "PUBLIC_TRADING" | "MATURE"
+  ): Promise<IP> => {
+    return apiCall(`/api/ips/${ipId}`, "PUT", { status });
+  },
+};
+
+/**
+ * Transaction/Trading API
+ */
+export const transactionAPI = {
+  /**
+   * Buy tokens
+   */
+  buy: async (ipId: string, amountUSD: number): Promise<Transaction> => {
+    return apiCall("/api/transactions/buy", "POST", {
+      ipId,
+      amountUSD,
+    });
+  },
+
+  /**
+   * Sell tokens
+   */
+  sell: async (ipId: string, amountTokens: number): Promise<Transaction> => {
+    return apiCall("/api/transactions/sell", "POST", {
+      ipId,
+      amountTokens,
+    });
+  },
+
+  /**
+   * Get transaction by ID
+   */
+  getById: async (id: string): Promise<Transaction> => {
+    return apiCall(`/api/transactions/${id}`, "GET");
+  },
+
+  /**
+   * Get user's transactions
+   */
+  getUserTransactions: async (userId: string): Promise<Transaction[]> => {
+    return apiCall(`/api/users/${userId}/transactions`, "GET");
+  },
+
+  /**
+   * Claim burn share
+   */
+  claimBurnShare: async (
+    ipId: string,
+    amountTokens: number
+  ): Promise<any> => {
+    return apiCall("/api/transactions/burn-claim", "POST", {
+      ipId,
+      amountTokens,
+    });
+  },
+};
+
+/**
+ * Health check
+ */
+export const healthAPI = {
+  check: async (): Promise<{ status: string }> => {
+    return apiCall("/health", "GET");
+  },
+};
+
+export default {
+  authAPI,
+  userAPI,
+  ipAPI,
+  transactionAPI,
+  healthAPI,
+};
