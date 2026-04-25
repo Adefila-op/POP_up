@@ -51,6 +51,8 @@ function UploadPage() {
   const [desc, setDesc] = useState("");
   const [tokenize, setTokenize] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isEnabling, setIsEnabling] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fileAccept = useMemo(
@@ -82,7 +84,7 @@ function UploadPage() {
     toast.success(`${selected.name} attached`);
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title) {
       toast.error("Please add a title");
@@ -92,21 +94,32 @@ function UploadPage() {
       toast.error(type === "pdf" ? "Please upload a PDF file." : "Please upload a file.");
       return;
     }
-    const result = publishContent({
-      type,
-      title,
-      description: desc || `New ${type} release by demo creator.`,
-      price: Number(price) || 0,
-      tokenize,
-      fileName: file.name,
-    });
 
-    toast.success("Listing created!", {
-      description: tokenize
-        ? `${file.name} uploaded and listed for IP fractionalization.`
-        : `${file.name} is now live in your store.`,
-    });
-    setTimeout(() => navigate({ to: "/content/$id", params: { id: result.contentId } }), 800);
+    try {
+      const result = await publishContent({
+        type,
+        title,
+        description: desc || `New ${type} release by demo creator.`,
+        price: Number(price) || 0,
+        tokenize,
+        fileName: file.name,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Listing created!", {
+        description: tokenize
+          ? `${file.name} uploaded and listed for IP fractionalization.`
+          : `${file.name} is now live in your store.`,
+      });
+      setTimeout(() => navigate({ to: "/content/$id", params: { id: result.contentId } }), 800);
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to publish");
+    }
+  };
   };
 
   if (!signedIn || !creatorWhitelisted) {
@@ -143,9 +156,21 @@ function UploadPage() {
                 title="1. Sign in"
                 body="Confirm your creator identity before you can open the publishing flow."
                 actionLabel={signedIn ? "Signed in" : "Sign in"}
-                onAction={() => {
-                  signIn();
-                  toast.success("Signed in as demo creator");
+                isLoading={isSigningIn}
+                onAction={async () => {
+                  setIsSigningIn(true);
+                  try {
+                    const result = await signIn();
+                    if (result.ok) {
+                      toast.success("Signed in successfully!");
+                    } else {
+                      toast.error(result.reason || "Failed to sign in");
+                    }
+                  } catch (error) {
+                    toast.error((error as Error).message || "Sign in failed");
+                  } finally {
+                    setIsSigningIn(false);
+                  }
                 }}
               />
               <AccessStep
@@ -153,13 +178,25 @@ function UploadPage() {
                 title="2. Creator whitelist"
                 body="Only whitelisted creators can launch new drops in this demo flow."
                 actionLabel={creatorWhitelisted ? "Whitelisted" : "Join whitelist"}
-                onAction={() => {
+                isLoading={isEnabling}
+                onAction={async () => {
                   if (!signedIn) {
                     toast.error("Sign in first to request creator access.");
                     return;
                   }
-                  enableCreatorWhitelist();
-                  toast.success("Creator whitelist approved");
+                  setIsEnabling(true);
+                  try {
+                    const result = await enableCreatorWhitelist();
+                    if (result.ok) {
+                      toast.success("Creator whitelist approved");
+                    } else {
+                      toast.error(result.reason || "Failed to enable creator access");
+                    }
+                  } catch (error) {
+                    toast.error((error as Error).message || "Failed to enable creator access");
+                  } finally {
+                    setIsEnabling(false);
+                  }
                 }}
               />
             </div>
@@ -354,13 +391,15 @@ function AccessStep({
   title,
   body,
   actionLabel,
+  isLoading,
   onAction,
 }: {
   done: boolean;
   title: string;
   body: string;
   actionLabel: string;
-  onAction: () => void;
+  isLoading?: boolean;
+  onAction: () => Promise<void> | void;
 }) {
   return (
     <div className="rounded-2xl border border-border bg-background p-4">
@@ -381,10 +420,10 @@ function AccessStep({
       <button
         type="button"
         onClick={onAction}
-        disabled={done}
+        disabled={done || isLoading}
         className="mt-3 w-full rounded-full bg-secondary py-2 text-sm font-semibold disabled:opacity-60"
       >
-        {actionLabel}
+        {isLoading ? "Loading..." : actionLabel}
       </button>
     </div>
   );

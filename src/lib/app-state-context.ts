@@ -40,10 +40,10 @@ export type AppStateSnapshot = {
 export type AppStateContextValue = AppStateSnapshot & {
   contentCatalog: ContentItem[];
   ipCatalog: IpAsset[];
-  signIn: () => void;
+  signIn: () => Promise<{ ok: boolean; reason?: string }>;
   signOut: () => void;
-  enableCreatorWhitelist: () => void;
-  connectWallet: () => void;
+  enableCreatorWhitelist: () => Promise<{ ok: boolean; reason?: string }>;
+  connectWallet: () => Promise<{ ok: boolean; reason?: string }>;
   disconnectWallet: () => void;
   setPushEnabled: (enabled: boolean) => void;
   purchaseContent: (contentId: string) => {
@@ -59,18 +59,18 @@ export type AppStateContextValue = AppStateSnapshot & {
     price: number;
     tokenize: boolean;
     fileName: string;
-  }) => { contentId: string; ipId?: string };
+  }) => Promise<{ contentId: string; ipId: string; error?: string }>;
   toggleFollowCreator: (slug: string) => boolean;
   toggleSavedContent: (contentId: string) => boolean;
   toggleLikedContent: (contentId: string) => boolean;
-  buyIpListing: (listingId: string) => { ok: boolean; reason?: string; qty?: number; price?: number };
+  buyIpListing: (listingId: string) => Promise<{ ok: boolean; reason?: string; qty?: number; price?: number }>;
   createIpListing: (input: { ipId: string; qty: number; price: number }) => { ok: boolean; reason?: string };
   cancelIpListing: (listingId: string) => { ok: boolean };
   sellIpToPool: (input: {
     ipId: string;
     qty: number;
     pricePerShare: number;
-  }) => { ok: boolean; reason?: string; proceeds?: number };
+  }) => Promise<{ ok: boolean; reason?: string; proceeds?: number }>;
 };
 
 export const AppStateContext = createContext<AppStateContextValue | null>(null);

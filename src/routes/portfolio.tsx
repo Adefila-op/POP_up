@@ -19,6 +19,7 @@ function PortfolioPage() {
   const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance, contentOrders, savedContentIds, createdIpAssets } =
     useAppState();
   const [view, setView] = useState<"portfolio" | "creator">("portfolio");
+  const [isConnecting, setIsConnecting] = useState(false);
   
   const library = contentCatalog.filter((item) => ownedContentIds.includes(item.id));
   const saved = contentCatalog.filter((item) => savedContentIds.includes(item.id));
@@ -27,6 +28,22 @@ function PortfolioPage() {
     .filter((holding) => holding.shares > 0);
 
   const totalIp = holdings.reduce((s, h) => s + h.shares * h.ip.pricePerShare, 0);
+
+  const handleConnect = async () => {
+    setIsConnecting(true);
+    try {
+      const result = await connectWallet();
+      if (result.ok) {
+        toast.success("Wallet connected! Sign in to continue.");
+      } else {
+        toast.error(result.reason || "Failed to connect wallet");
+      }
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to connect wallet");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   if (!walletConnected) {
     return (
@@ -46,14 +63,12 @@ function PortfolioPage() {
           </div>
           <button
             type="button"
-            onClick={() => {
-              connectWallet();
-              toast.success("Wallet connected");
-            }}
-            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 font-semibold text-ink-foreground shadow-ink"
+            onClick={handleConnect}
+            disabled={isConnecting}
+            className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 font-semibold text-ink-foreground shadow-ink disabled:opacity-50"
           >
             <ShieldCheck className="h-4 w-4" />
-            Connect wallet
+            {isConnecting ? "Connecting..." : "Connect wallet"}
           </button>
         </section>
       </AppShell>
