@@ -1,0 +1,10 @@
+server/
+api/
+*.md
+.git
+.gitignore
+.env.local
+package-lock.json
+node_modules/
+dist/
+.turbo/
