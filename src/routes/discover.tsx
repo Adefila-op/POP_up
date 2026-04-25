@@ -32,7 +32,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { ContentOpener } from "@/components/ContentOpener";
-import { CONTENT, creatorSlug, type ContentItem } from "@/lib/data";
+import { creatorSlug, type ContentItem } from "@/lib/data";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useAppState } from "@/lib/use-app-state";
@@ -144,7 +144,7 @@ function DiscoverPage() {
     toggleLikedContent,
     purchaseContent,
   } = useAppState();
-  const [feed, setFeed] = useState<FeedItem[]>(() => buildFeed(CONTENT));
+  const [feed, setFeed] = useState<FeedItem[]>([]);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
 
   const [activeComments, setActiveComments] = useState<string | null>(null);
@@ -157,12 +157,14 @@ function DiscoverPage() {
   const commentPost = feed.find((p) => p.id === activeComments) ?? null;
 
   useEffect(() => {
+    // Initialize and update feed from real contentCatalog
     setFeed((prev) => {
+      if (contentCatalog.length === 0) return prev; // Wait for data to load
       const nextIds = new Set(contentCatalog.map((item) => item.id));
       const kept = prev.filter((item) => nextIds.has(item.id));
       const keptIds = new Set(kept.map((item) => item.id));
       const additions = buildFeed(contentCatalog).filter((item) => !keptIds.has(item.id));
-      return additions.length ? [...additions, ...kept] : kept;
+      return additions.length ? [...additions, ...kept] : buildFeed(contentCatalog);
     });
   }, [contentCatalog]);
 

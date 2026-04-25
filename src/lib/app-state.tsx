@@ -108,8 +108,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             walletConnected: true,
             cashBalance: profile.cash_balance,
           }));
-          // Load user's IPs
-          loadIPData();
         } catch (error) {
           console.error("Failed to restore auth:", error);
           localStorage.removeItem(AUTH_TOKEN_KEY);
@@ -118,6 +116,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
 
     restoreAuth();
+    // Load IP data on mount
+    loadIPData();
   }, []);
 
   // Load IP data from API
