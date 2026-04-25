@@ -3,8 +3,8 @@
  * Not for Cloudflare Workers
  */
 
-import { createApp } from "@/server/index";
-import { initializeDatabase } from "@/server/db/client";
+import { createApp } from "./index";
+import { initializeDatabase } from "./db/client";
 
 const PORT = process.env.PORT || 3000;
 
