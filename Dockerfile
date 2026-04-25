@@ -19,4 +19,4 @@ ENV DATABASE_URL=${DATABASE_URL}
 ENV ENVIRONMENT=production
 ENV PORT=3000
 
-CMD ["node", "--loader", "tsx", "server/entry-node.ts"]
+CMD ["node", "--import", "tsx", "server/entry-node.ts"]
