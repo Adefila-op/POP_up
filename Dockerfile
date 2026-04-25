@@ -13,8 +13,12 @@ COPY server ./server
 COPY tsconfig.json ./
 COPY vite.config.ts ./
 
-# Build API with esbuild (bundle all dependencies)
-RUN npx esbuild server/entry-node.ts --bundle --platform=node --target=node20 --outfile=dist/api.js --external:postgres
+# Build API with esbuild (bundle app code, mark npm packages as external)
+    RUN npx esbuild server/entry-node.ts --bundle --platform=node --target=node20 --outfile=dist/api.js \
+        --external:postgres \
+        --external:hono \
+        --external:drizzle-orm \
+        --external:@hono/cors
 
 # Expose API port
 EXPOSE 3000
