@@ -6,7 +6,7 @@ import {
   type AppStateContextValue,
   type AppStateSnapshot,
 } from "@/lib/app-state-context";
-import { CONTENT, CREATORS, IP_ASSETS, type ContentItem, type IpAsset, getCreatorByName } from "@/lib/data";
+import { CONTENT, CREATORS, type ContentItem, type IpAsset, getCreatorByName } from "@/lib/data";
 import { authAPI, ipAPI, transactionAPI, type User, type IP } from "@/lib/api-client";
 
 const STORAGE_KEY = "popup-app-state-v1";
@@ -72,18 +72,15 @@ const initialSnapshot: AppStateSnapshot = {
   creatorWhitelisted: false,
   walletConnected: false,
   pushEnabled: true,
-  cashBalance: 245,
-  ownedContentIds: ["c1", "c3"],
+  cashBalance: 0, // Will be set from API
+  ownedContentIds: [],
   followedCreatorSlugs: [],
   savedContentIds: [],
   likedContentIds: [],
   createdContent: [],
   createdIpAssets: [],
-  marketListings: IP_ASSETS.flatMap((asset) => seedListings(asset.id, asset.pricePerShare)),
-  ipHoldings: {
-    ip1: 50,
-    ip3: 12,
-  },
+  marketListings: [], // Will load from API
+  ipHoldings: {},
   contentOrders: [],
   contentPurchaseCounts: {},
 };
@@ -162,11 +159,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateContextValue>(
     () => ({
       ...state,
-      contentCatalog: [...state.createdContent, ...CONTENT].map((item) => ({
+      contentCatalog: [...state.createdContent].map((item) => ({
         ...item,
         sales: item.sales + (state.contentPurchaseCounts[item.id] ?? 0),
       })),
-      ipCatalog: [...state.createdIpAssets, ...apiIPs.map(apiIPToIpAsset), ...IP_ASSETS],
+      ipCatalog: [...state.createdIpAssets, ...apiIPs.map(apiIPToIpAsset)],
       
       // ===== REAL WALLET CONNECT =====
       connectWallet: async () => {
