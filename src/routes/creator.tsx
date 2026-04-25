@@ -20,7 +20,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAppState } from "@/lib/use-app-state";
 import IPLaunchModal from "@/components/creator/IPLaunchModal";
-import ProductPostModal from "@/components/creator/ProductPostModal";
 import DiscoveryPostModal from "@/components/creator/DiscoveryPostModal";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -74,7 +73,6 @@ interface CreatedPost {
 function CreatorDashboard() {
   const { createdContent, createdIpAssets, signedIn } = useAppState();
   const [ipModalOpen, setIpModalOpen] = useState(false);
-  const [productModalOpen, setProductModalOpen] = useState(false);
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -145,7 +143,7 @@ function CreatorDashboard() {
     <AppShell title="Creator Dashboard" subtitle="Manage your content, IP, and audience">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Button
             onClick={() => setIpModalOpen(true)}
             className="h-16 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
@@ -154,18 +152,11 @@ function CreatorDashboard() {
             Launch IP
           </Button>
           <Button
-            onClick={() => setProductModalOpen(true)}
-            className="h-16 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-          >
-            <Package className="w-5 h-5 mr-2" />
-            Post Product
-          </Button>
-          <Button
             onClick={() => setPostModalOpen(true)}
             className="h-16 bg-gradient-to-r from-pink-600 to-pink-700 hover:from-pink-700 hover:to-pink-800"
           >
             <MessageSquare className="w-5 h-5 mr-2" />
-            Create Post
+            Repost Product
           </Button>
         </div>
 
@@ -523,9 +514,6 @@ function CreatorDashboard() {
 
       {/* Modals */}
       {ipModalOpen && <IPLaunchModal open={ipModalOpen} onOpenChange={setIpModalOpen} />}
-      {productModalOpen && (
-        <ProductPostModal open={productModalOpen} onOpenChange={setProductModalOpen} />
-      )}
       {postModalOpen && (
         <DiscoveryPostModal open={postModalOpen} onOpenChange={setPostModalOpen} />
       )}

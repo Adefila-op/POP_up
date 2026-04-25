@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MessageSquare, Sparkles, Tag, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAppState } from "@/lib/use-app-state";
 
 interface DiscoveryPostModalProps {
   open: boolean;
@@ -14,20 +15,21 @@ interface DiscoveryPostModalProps {
 }
 
 export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPostModalProps) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const { createdContent } = useAppState();
+  const [selectedProduct, setSelectedProduct] = useState<string>("");
+  const [description, setDescription] = useState("");
   const [tags, setTags] = useState("");
   const [loading, setLoading] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
 
   const handlePost = async () => {
-    if (!title.trim()) {
-      toast.error("Title is required");
+    if (!selectedProduct) {
+      toast.error("Select a product to repost");
       return;
     }
 
-    if (!content.trim()) {
-      toast.error("Content is required");
+    if (!description.trim()) {
+      toast.error("Add a description for this repost");
       return;
     }
 
@@ -35,23 +37,24 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
     try {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      toast.success("Post created successfully!");
+      toast.success("Product reposted to discovery!");
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      toast.error("Failed to create post");
+      toast.error("Failed to repost product");
     } finally {
       setLoading(false);
     }
   };
 
   const resetForm = () => {
-    setTitle("");
-    setContent("");
+    setSelectedProduct("");
+    setDescription("");
     setTags("");
     setPreviewMode(false);
   };
 
+  const product = createdContent.find(c => c.id === selectedProduct);
   const tagList = tags
     .split(",")
     .map((t) => t.trim())
@@ -63,10 +66,10 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-pink-600" />
-            Create Discovery Post
+            Repost Product
           </DialogTitle>
           <DialogDescription>
-            Share your story, tips, or updates with the creator community
+            Share your product to the discovery feed with a new description or angle
           </DialogDescription>
         </DialogHeader>
 
@@ -99,32 +102,39 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
             // Edit Mode
             <div className="space-y-4">
               <div>
-                <Label htmlFor="title">Post Title</Label>
-                <Input
-                  id="title"
-                  placeholder="e.g., How I grew my creator business to $10k/month"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="mt-2"
-                  maxLength={120}
-                />
-                <p className="text-xs text-slate-500 mt-1">
-                  {title.length}/120 characters
-                </p>
+                <Label htmlFor="product">Select Product to Repost</Label>
+                <select
+                  id="product"
+                  value={selectedProduct}
+                  onChange={(e) => setSelectedProduct(e.target.value)}
+                  className="w-full mt-2 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                >
+                  <option value="">Choose a product...</option>
+                  {createdContent.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.title} (${product.price})
+                    </option>
+                  ))}
+                </select>
+                {product && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    {product.type.toUpperCase()} • {product.sales} sales
+                  </p>
+                )}
               </div>
 
               <div>
-                <Label htmlFor="content">Content</Label>
+                <Label htmlFor="description">Repost Description</Label>
                 <Textarea
-                  id="content"
-                  placeholder="Share your story, insights, or tips... You can include links, tips, and engage with your audience."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  id="description"
+                  placeholder="Share why you're reposting this product, highlight its benefits, or tell a story about its creation..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="mt-2 min-h-32 resize-none"
                   maxLength={5000}
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  {content.length}/5000 characters
+                  {description.length}/5000 characters
                 </p>
               </div>
 
@@ -132,7 +142,7 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
                 <Label htmlFor="tags">Tags (comma separated)</Label>
                 <Input
                   id="tags"
-                  placeholder="e.g., entrepreneurship, creator-economy, digital-products"
+                  placeholder="e.g., digital-product, creator-tools, must-have"
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   className="mt-2"
@@ -145,7 +155,7 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
               <Alert>
                 <Sparkles className="h-4 w-4" />
                 <AlertDescription>
-                  Posts are visible to all creators and can help build your audience and credibility
+                  Reposts are visible to all creators and can help boost sales and awareness
                 </AlertDescription>
               </Alert>
             </div>
@@ -153,15 +163,17 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
             // Preview Mode
             <div className="bg-white border rounded-lg p-6 space-y-4">
               <div>
-                <h3 className="text-2xl font-bold">{title || "Post Title"}</h3>
+                <h3 className="text-2xl font-bold">
+                  {product?.title || "Select a product"}
+                </h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  by You • Just now • {tagList.length} tags
+                  by You • Just now • {product && `${product.type.toUpperCase()} • $${product.price}`}
                 </p>
               </div>
 
               <div className="prose prose-sm max-w-none">
                 <p className="text-slate-700 whitespace-pre-wrap">
-                  {content || "Your post content will appear here..."}
+                  {description || "Your repost description will appear here..."}
                 </p>
               </div>
 
@@ -179,20 +191,21 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
                 </div>
               )}
 
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t text-center">
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-slate-500">Views</p>
+              {product && (
+                <div className="bg-slate-50 p-4 rounded mt-4">
+                  <p className="text-sm font-medium text-slate-600">Original Product</p>
+                  <div className="flex justify-between mt-2">
+                    <div>
+                      <p className="text-sm">{product.title}</p>
+                      <p className="text-xs text-slate-500">${product.price}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{product.sales} sales</p>
+                      <p className="text-xs text-slate-500">⭐ {product.rating}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-slate-500">Likes</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">0</p>
-                  <p className="text-xs text-slate-500">Comments</p>
-                </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -208,10 +221,10 @@ export default function DiscoveryPostModal({ open, onOpenChange }: DiscoveryPost
             </Button>
             <Button
               onClick={handlePost}
-              disabled={loading || !title.trim() || !content.trim()}
+              disabled={loading || !selectedProduct || !description.trim()}
               className="flex-1 bg-pink-600 hover:bg-pink-700"
             >
-              {loading ? "Posting..." : "Post to Discovery"}
+              {loading ? "Posting..." : "Repost to Discovery"}
             </Button>
           </div>
         </div>

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrendingUp, Wallet, Coins, Library, ShieldCheck } from "lucide-react";
+import { TrendingUp, Wallet, Coins, Library, ShieldCheck, BarChart3 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/lib/use-app-state";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
@@ -15,8 +16,10 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
-  const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance, contentOrders, savedContentIds } =
+  const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance, contentOrders, savedContentIds, createdIpAssets } =
     useAppState();
+  const [view, setView] = useState<"portfolio" | "creator">("portfolio");
+  
   const library = contentCatalog.filter((item) => ownedContentIds.includes(item.id));
   const saved = contentCatalog.filter((item) => savedContentIds.includes(item.id));
   const holdings = ipCatalog
@@ -59,7 +62,34 @@ function PortfolioPage() {
 
   return (
     <AppShell title="Portfolio" subtitle="Your library, IP & pools">
-      {/* Wallet card */}
+      {/* View Toggle */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setView("portfolio")}
+          className={`flex-1 py-3 px-4 rounded-xl font-semibold transition ${
+            view === "portfolio"
+              ? "bg-ink text-ink-foreground"
+              : "bg-card text-foreground hover:bg-secondary"
+          }`}
+        >
+          <Wallet className="w-4 h-4 inline mr-2" />
+          My Holdings
+        </button>
+        <button
+          onClick={() => setView("creator")}
+          className={`flex-1 py-3 px-4 rounded-xl font-semibold transition ${
+            view === "creator"
+              ? "bg-ink text-ink-foreground"
+              : "bg-card text-foreground hover:bg-secondary"
+          }`}
+        >
+          <BarChart3 className="w-4 h-4 inline mr-2" />
+          Creator Dashboard
+        </button>
+      </div>
+
+      {view === "portfolio" ? (
+        <>
       <section className="rounded-3xl bg-ink p-6 text-ink-foreground shadow-ink">
         <div className="flex items-center justify-between">
           <div>
@@ -184,6 +214,104 @@ function PortfolioPage() {
           )}
         </div>
       </section>
+        </>
+      ) : (
+      /* Creator Dashboard View */
+      <>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <section className="rounded-3xl bg-card p-4 shadow-soft">
+            <p className="text-xs text-muted-foreground">Total Earnings</p>
+            <p className="mt-2 text-2xl font-bold">${(createdIpAssets.length * 5000 + contentCatalog.length * 1000).toFixed(0)}</p>
+          </section>
+          <section className="rounded-3xl bg-card p-4 shadow-soft">
+            <p className="text-xs text-muted-foreground">Active IPs</p>
+            <p className="mt-2 text-2xl font-bold">{createdIpAssets.length}</p>
+          </section>
+        </div>
+
+        {/* Launch IP Section */}
+        <section className="mt-6">
+          <SectionHead icon={<Coins className="h-4 w-4" />} title="Your IP Assets" />
+          <Link 
+            to="/creator"
+            className="block rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-4 shadow-soft text-white hover:shadow-lg transition"
+          >
+            <p className="font-semibold flex items-center gap-2">
+              <span className="text-xl">⚡</span> Launch IP Asset
+            </p>
+            <p className="text-xs mt-1 opacity-90">Create and tokenize your intellectual property</p>
+          </Link>
+          {createdIpAssets.length === 0 && (
+            <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft mt-3">
+              No IP assets yet. Launch your first IP to get started.
+            </p>
+          )}
+          {createdIpAssets.map((ip) => (
+            <Link
+              key={ip.id}
+              to="/ip/$id"
+              params={{ id: ip.id }}
+              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
+            >
+              <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold">{ip.title}</p>
+                <p className="text-xs text-muted-foreground">{ip.totalSupply} tokens</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold">${ip.pricePerShare.toFixed(2)}</p>
+                <p className="text-xs text-success">+5.2%</p>
+              </div>
+            </Link>
+          ))}
+        </section>
+
+        {/* Products Section */}
+        <section className="mt-6">
+          <SectionHead icon={<Library className="h-4 w-4" />} title="Your Products" />
+          {contentCatalog.length === 0 ? (
+            <div className="rounded-2xl bg-card p-4 shadow-soft">
+              <p className="text-sm text-muted-foreground">No products yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">Navigate to Upload to add your first product.</p>
+            </div>
+          ) : (
+            contentCatalog.slice(0, 3).map((item) => (
+              <Link
+                key={item.id}
+                to="/content/$id"
+                params={{ id: item.id }}
+                className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
+              >
+                <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold">{item.title}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{item.type} · ${item.price}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{item.sales} sales</p>
+                  <p className="text-xs text-muted-foreground">⭐ {item.rating}</p>
+                </div>
+              </Link>
+            ))
+          )}
+        </section>
+
+        {/* Repost to Discovery */}
+        <section className="mt-6">
+          <SectionHead icon={<TrendingUp className="h-4 w-4" />} title="Repost & Promote" />
+          <Link 
+            to="/creator"
+            className="block rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-4 shadow-soft text-white hover:shadow-lg transition"
+          >
+            <p className="font-semibold flex items-center gap-2">
+              <span className="text-xl">📢</span> Repost Product to Discovery
+            </p>
+            <p className="text-xs mt-1 opacity-90">Share your products with the creator community</p>
+          </Link>
+        </section>
+      </>
+      )}
     </AppShell>
   );
 }
