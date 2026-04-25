@@ -15,29 +15,36 @@ export interface BlockchainConfig {
 }
 
 // Network configuration
-export const NETWORKS: Record<string, BlockchainConfig> = {
-  baseSepolia: {
-    network: "baseSepolia",
-    rpcUrl: "https://sepolia.base.org",
-    chainId: 84532,
-    creatorRegistryAddress: "", // Will be set after deployment
-    ipMarketplaceAddress: "", // Will be set after deployment
-  },
-  sepolia: {
-    network: "sepolia",
-    rpcUrl: "https://sepolia.infura.io/v3/YOUR_KEY",
-    chainId: 11155111,
-    creatorRegistryAddress: "",
-    ipMarketplaceAddress: "",
-  },
-  base: {
-    network: "base",
-    rpcUrl: "https://base.infura.io/v3/YOUR_KEY",
-    chainId: 8453,
-    creatorRegistryAddress: "",
-    ipMarketplaceAddress: "",
-  },
+const getNetworkConfig = (): Record<string, BlockchainConfig> => {
+  const creatorRegistry = import.meta.env.VITE_CREATOR_REGISTRY_ADDRESS || "";
+  const ipMarketplace = import.meta.env.VITE_IP_MARKETPLACE_ADDRESS || "";
+  
+  return {
+    baseSepolia: {
+      network: "baseSepolia",
+      rpcUrl: "https://sepolia.base.org",
+      chainId: 84532,
+      creatorRegistryAddress: creatorRegistry,
+      ipMarketplaceAddress: ipMarketplace,
+    },
+    sepolia: {
+      network: "sepolia",
+      rpcUrl: "https://sepolia.infura.io/v3/YOUR_KEY",
+      chainId: 11155111,
+      creatorRegistryAddress: creatorRegistry,
+      ipMarketplaceAddress: ipMarketplace,
+    },
+    base: {
+      network: "base",
+      rpcUrl: "https://base.infura.io/v3/YOUR_KEY",
+      chainId: 8453,
+      creatorRegistryAddress: creatorRegistry,
+      ipMarketplaceAddress: ipMarketplace,
+    },
+  };
 };
+
+export const NETWORKS = getNetworkConfig();
 
 /**
  * Get Web3 provider (MetaMask or fallback to RPC)

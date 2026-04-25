@@ -40,7 +40,7 @@ contract IPTokenization is ERC20, ERC20Burnable, Ownable {
         address _ipCreator,
         uint256 _initialLiquidityUSD,
         uint256 _totalTokens
-    ) ERC20(_ipTitle, "IP") Ownable(msg.sender) {
+    ) ERC20(_ipTitle, "IP") Ownable() {
         ipTitle = _ipTitle;
         ipDescription = _ipDescription;
         ipCreator = _ipCreator;

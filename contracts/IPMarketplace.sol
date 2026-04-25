@@ -50,7 +50,7 @@ contract IPMarketplace is Ownable, ReentrancyGuard {
     event TokensSold(address indexed seller, address indexed ipToken, uint256 tokenAmount, uint256 usdReceived, uint256 fee);
     event TransactionRecorded(address indexed trader, address indexed ipToken, bool isBuy, uint256 timestamp);
     
-    constructor(address _feeCollector) Ownable(msg.sender) {
+    constructor(address _feeCollector) Ownable() {
         require(_feeCollector != address(0), "Invalid fee collector");
         feeCollector = _feeCollector;
     }

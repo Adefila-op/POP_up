@@ -36,7 +36,7 @@ contract CreatorRegistry is ERC721, Ownable {
     event CreatorDeactivated(address indexed creator);
     event IPLaunched(address indexed creator, uint256 newCount);
     
-    constructor() ERC721("Creator Registry", "CREATOR") Ownable(msg.sender) {
+    constructor() ERC721("Creator Registry", "CREATOR") Ownable() {
         tokenIdCounter.increment(); // Start from 1
     }
     

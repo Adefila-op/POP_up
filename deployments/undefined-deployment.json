@@ -1,0 +1,9 @@
+{
+  "deployer": "0x3d9A4F8E9bE795c7e82Da4FEd21cDD0D5234513E",
+  "contracts": {
+    "CreatorRegistry": "0x875E8bbA262553411DEE69748cbEcB7189a240d4",
+    "IPMarketplace": "0xb7792cE67ce25894edD492E1927cf007c6f2cB7d",
+    "ExampleIPTokenization": "0x085ac471Bf1777F90478d5BF5c1277F312Ba9b16"
+  },
+  "timestamp": "2026-04-25T22:14:11.900Z"
+}
