@@ -6,20 +6,17 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN npm install --legacy-peer-deps --production
 
 # Copy source code  
-COPY . .
-
-# Build frontend
-RUN npm run build
+COPY server ./server
 
 # Expose API port
 EXPOSE 3000
 
-# Start API server
+# Start API server only (no frontend build needed - Vercel handles that)
 ENV DATABASE_URL=${DATABASE_URL}
 ENV ENVIRONMENT=production
 ENV PORT=3000
 
-CMD ["npm", "run", "dev:api"]
+CMD ["node", "--loader", "tsx", "server/entry-node.ts"]
