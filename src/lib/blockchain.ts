@@ -47,6 +47,45 @@ const getNetworkConfig = (): Record<string, BlockchainConfig> => {
 export const NETWORKS = getNetworkConfig();
 
 /**
+ * Detect available Web3 wallets
+ */
+export function getAvailableWallets(): string[] {
+  const wallets: string[] = [];
+  
+  if (window.ethereum) {
+    // Detect wallet provider name
+    if ((window as any).ethereum.isMetaMask) {
+      wallets.push("MetaMask");
+    }
+    if ((window as any).ethereum.isZerion) {
+      wallets.push("Zerion");
+    }
+    if ((window as any).ethereum.isCoinbaseWallet) {
+      wallets.push("Coinbase Wallet");
+    }
+    if ((window as any).ethereum.isWalletConnect) {
+      wallets.push("WalletConnect");
+    }
+    if ((window as any).ethereum.isFramework) {
+      wallets.push("Frame");
+    }
+    // Generic provider detected
+    if (wallets.length === 0) {
+      wallets.push("Web3 Wallet");
+    }
+  }
+  
+  return wallets;
+}
+
+/**
+ * Check if any wallet is installed
+ */
+export function isWalletInstalled(): boolean {
+  return typeof window !== "undefined" && !!window.ethereum;
+}
+
+/**
  * Get Web3 provider (MetaMask or fallback to RPC)
  */
 export function getProvider(network: string = "baseSepolia"): ethers.BrowserProvider | ethers.JsonRpcProvider {
@@ -58,22 +97,32 @@ export function getProvider(network: string = "baseSepolia"): ethers.BrowserProv
 }
 
 /**
- * Get signer from MetaMask
+ * Get signer from any available Web3 wallet (MetaMask, Zerion, WalletConnect, Coinbase Wallet, etc.)
  */
 export async function getSigner(): Promise<ethers.JsonRpcSigner> {
   if (!window.ethereum) {
-    throw new Error("MetaMask not installed");
+    throw new Error(
+      "No Web3 wallet detected. Please install MetaMask, Zerion, Coinbase Wallet, or another EIP-1193 compatible wallet."
+    );
   }
   const provider = new ethers.BrowserProvider(window.ethereum);
   return provider.getSigner();
 }
 
 /**
- * Request wallet connection and get user address
+ * Request wallet connection and get user address (supports MetaMask, Zerion, WalletConnect, etc.)
  */
 export async function connectWallet(): Promise<string> {
   if (!window.ethereum) {
-    throw new Error("MetaMask not installed");
+    const walletLinks = [
+      "MetaMask: https://metamask.io",
+      "Zerion: https://zerion.io",
+      "Coinbase Wallet: https://www.coinbase.com/wallet",
+      "WalletConnect: https://walletconnect.com"
+    ];
+    throw new Error(
+      `No Web3 wallet detected. Please install one of these:\n${walletLinks.join("\n")}`
+    );
   }
 
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -201,11 +250,13 @@ export async function getUserTransactionHistory(userAddress: string): Promise<an
 }
 
 /**
- * Switch network in MetaMask
+ * Switch network in wallet (supports any EIP-1193 compatible wallet)
  */
 export async function switchNetwork(chainId: number): Promise<void> {
   if (!window.ethereum) {
-    throw new Error("MetaMask not installed");
+    throw new Error(
+      "No Web3 wallet detected. Please install MetaMask, Zerion, Coinbase Wallet, or another EIP-1193 compatible wallet."
+    );
   }
 
   try {

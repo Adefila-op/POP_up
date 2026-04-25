@@ -170,7 +170,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         try {
           setIsLoading(true);
           if (!window.ethereum) {
-            throw new Error("MetaMask not installed");
+            throw new Error(
+              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect"
+            );
           }
 
           const provider = new BrowserProvider(window.ethereum);
@@ -206,7 +208,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           setIsLoading(true);
 
           if (!window.ethereum) {
-            throw new Error("MetaMask not installed");
+            throw new Error(
+              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect"
+            );
           }
 
           const provider = new BrowserProvider(window.ethereum);
