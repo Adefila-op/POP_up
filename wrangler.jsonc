@@ -1,7 +1,34 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tanstack-start-app",
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "creator-commerce-hub",
+  "type": "service",
+  "main": "server/index.ts",
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+
+  "build": {
+    "command": "npm run build",
+    "cwd": "."
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "creator-commerce-hub",
+      "database_id": "PASTE_YOUR_DATABASE_ID_HERE"
+    }
+  ],
+
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production"
+      }
+    },
+    "development": {
+      "vars": {
+        "ENVIRONMENT": "development"
+      }
+    }
+  }
 }
