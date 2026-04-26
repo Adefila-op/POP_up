@@ -1,10 +1,10 @@
 /**
  * Vercel Serverless API Handler
- * Exports Hono app for Vercel's /api routes
+ * Catch-all function for /api/* routes
  */
 
-import { createApp } from "../server/index";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createApp } from "../server/index";
 import type { Env } from "../server/index";
 
 const env: Env = {
@@ -16,33 +16,28 @@ const env: Env = {
 
 const app = createApp(env);
 
-export default async (req: VercelRequest, res: VercelResponse) => {
-  // Convert Vercel request to Web API Request
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = new URL(req.url || "/", `https://${req.headers.host}`);
   const request = new Request(url, {
     method: req.method,
     headers: req.headers as Record<string, string>,
-    body: ["GET", "HEAD"].includes(req.method?.toUpperCase() || "GET")
-      ? undefined
-      : JSON.stringify(req.body),
+    body:
+      req.method && ["GET", "HEAD"].includes(req.method.toUpperCase())
+        ? undefined
+        : JSON.stringify(req.body),
   });
 
   try {
-    // Handle with Hono app
-    const response = await app.fetch(request, env, {
-      waitUntil: (promise: Promise<unknown>) => promise,
-    });
+    const response = await app.fetch(request, env);
 
-    // Copy response headers
     response.headers.forEach((value: string, key: string) => {
       res.setHeader(key, value);
     });
 
-    // Set status and send body
     res.status(response.status);
     res.send(await response.text());
   } catch (error) {
     console.error("API Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-};
+}
