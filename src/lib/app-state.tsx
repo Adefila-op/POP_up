@@ -122,12 +122,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         const walletAddress = accounts[0];
         if (!walletAddress) return;
 
-        const balance = await provider.getBalance(walletAddress);
+        let walletBalance = 0;
+        try {
+          const balance = await provider.getBalance(walletAddress);
+          walletBalance = Number(formatEther(balance));
+        } catch (balanceError) {
+          console.warn("Failed to fetch wallet balance, using 0:", balanceError);
+          // Continue without balance - it will be updated later
+        }
+
         setState((prev) => ({
           ...prev,
           walletConnected: true,
           walletAddress,
-          walletBalance: Number(formatEther(balance)),
+          walletBalance,
         }));
       } catch (error) {
         console.error("Failed to restore wallet session:", error);
@@ -246,13 +254,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const walletAddress = accounts[0];
 
           if (!walletAddress) throw new Error("No wallet selected");
-          const balance = await provider.getBalance(walletAddress);
+          
+          let walletBalance = 0;
+          try {
+            const balance = await provider.getBalance(walletAddress);
+            walletBalance = Number(formatEther(balance));
+          } catch (balanceError) {
+            console.warn("Failed to fetch wallet balance, using 0:", balanceError);
+            // Continue without balance - it will be updated later
+          }
 
           setState((prev) => ({
             ...prev,
             walletConnected: true,
             walletAddress,
-            walletBalance: Number(formatEther(balance)),
+            walletBalance,
           }));
 
           return { ok: true as const };
