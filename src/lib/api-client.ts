@@ -73,17 +73,25 @@ export interface BurnClaim {
   updated_at: string;
 }
 
-// In production we always use same-origin /api so deployed frontends
-// cannot be accidentally pointed at an old cross-origin backend.
+// API Base URL configuration
 const API_BASE = (() => {
   if (typeof window === "undefined") {
+    // Server-side rendering
     return import.meta.env.VITE_API_URL || "";
   }
 
-  if (window.location.hostname === "localhost") {
-    return import.meta.env.VITE_API_URL || "http://localhost:3000";
+  // Always prefer explicit VITE_API_URL environment variable
+  const apiUrl = import.meta.env.VITE_API_URL;
+  if (apiUrl) {
+    return apiUrl;
   }
 
+  // Local development fallback
+  if (window.location.hostname === "localhost") {
+    return "http://localhost:3000";
+  }
+
+  // Production: must have VITE_API_URL set or requests will fail
   return "";
 })();
 
