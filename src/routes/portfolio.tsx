@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { TrendingUp, Wallet, Coins, Library, ShieldCheck, BarChart3, AlertCircle } from "lucide-react";
+import { TrendingUp, Wallet, Coins, Library, ShieldCheck, BarChart3 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useAppState } from "@/lib/use-app-state";
-import { isWalletInstalled, getAvailableWallets } from "@/lib/blockchain";
+import { useAccount } from "wagmi";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
@@ -19,15 +19,9 @@ export const Route = createFileRoute("/portfolio")({
 function PortfolioPage() {
   const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance, contentOrders, savedContentIds, createdIpAssets } =
     useAppState();
+  const { isConnected } = useAccount();
   const [view, setView] = useState<"portfolio" | "creator">("portfolio");
   const [isConnecting, setIsConnecting] = useState(false);
-  const [availableWallets, setAvailableWallets] = useState<string[]>([]);
-  const [walletDetected, setWalletDetected] = useState(false);
-  
-  useEffect(() => {
-    setWalletDetected(isWalletInstalled());
-    setAvailableWallets(getAvailableWallets());
-  }, []);
   
   const library = contentCatalog.filter((item) => ownedContentIds.includes(item.id));
   const saved = contentCatalog.filter((item) => savedContentIds.includes(item.id));
@@ -65,45 +59,8 @@ function PortfolioPage() {
             Your holdings, library, and pool positions stay hidden until a wallet is connected.
           </p>
           
-          {/* Show detected wallets or guide to install */}
-          {walletDetected && availableWallets.length > 0 ? (
-            <div className="mt-5 rounded-lg bg-green-50 p-4 border border-green-200">
-              <p className="text-sm font-medium text-green-900">
-                ✓ Wallet detected: {availableWallets.join(", ")}
-              </p>
-              <p className="mt-1 text-xs text-green-700">
-                Click "Connect wallet" below to authorize and proceed.
-              </p>
-            </div>
-          ) : (
-            <div className="mt-5 rounded-lg bg-amber-50 p-4 border border-amber-200">
-              <div className="flex gap-2">
-                <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-amber-900">
-                    No wallet detected
-                  </p>
-                  <p className="mt-1 text-xs text-amber-700">
-                    Install one of these wallets to get started:
-                  </p>
-                  <div className="mt-3 space-y-2">
-                    <a href="https://metamask.io" target="_blank" rel="noopener noreferrer" className="text-xs text-amber-700 hover:text-amber-900 underline block">
-                      → MetaMask (metamask.io)
-                    </a>
-                    <a href="https://zerion.io" target="_blank" rel="noopener noreferrer" className="text-xs text-amber-700 hover:text-amber-900 underline block">
-                      → Zerion (zerion.io)
-                    </a>
-                    <a href="https://www.coinbase.com/wallet" target="_blank" rel="noopener noreferrer" className="text-xs text-amber-700 hover:text-amber-900 underline block">
-                      → Coinbase Wallet
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
           <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
-            <Mini label="Wallet" value={walletDetected ? "Ready" : "Install"} />
+            <Mini label="Wallet" value={isConnected ? "Ready" : "Connect"} />
             <Mini label="Library" value="Locked" />
             <Mini label="IP" value="Locked" />
           </div>
