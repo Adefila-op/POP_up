@@ -8,27 +8,27 @@
 
   "build": {
     "command": "npm run build",
-    "cwd": "."
+    "cwd": ".",
   },
 
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "creator-commerce-hub",
-      "database_id": "PASTE_YOUR_DATABASE_ID_HERE"
-    }
+      "database_id": "PASTE_YOUR_DATABASE_ID_HERE",
+    },
   ],
 
   "env": {
     "production": {
       "vars": {
-        "ENVIRONMENT": "production"
-      }
+        "ENVIRONMENT": "production",
+      },
     },
     "development": {
       "vars": {
-        "ENVIRONMENT": "development"
-      }
-    }
-  }
+        "ENVIRONMENT": "development",
+      },
+    },
+  },
 }

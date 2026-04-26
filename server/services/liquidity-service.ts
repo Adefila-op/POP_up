@@ -27,6 +27,10 @@ export class LiquidityService {
     this.transactionService = options.transactionService;
   }
 
+  setTransactionService(transactionService: TransactionService): void {
+    this.transactionService = transactionService;
+  }
+
   /**
    * Trigger emergency burn when liquidity falls below 5%
    * Creates liquidity event and prepares burn claims for all holders
@@ -36,8 +40,7 @@ export class LiquidityService {
     if (!ip) throw new Error("IP not found");
 
     const now = new Date();
-    const liquidityPercentage =
-      (ip.current_liquidity / ip.initial_liquidity) * 100;
+    const liquidityPercentage = (ip.current_liquidity / ip.initial_liquidity) * 100;
 
     // Create liquidity event
     const eventId = generateId("event");
@@ -100,11 +103,7 @@ export class LiquidityService {
   /**
    * Claim burn share - holder burns tokens to claim liquidity
    */
-  async claimBurnShare(
-    ipId: string,
-    userId: string,
-    amountTokens: number
-  ): Promise<BurnClaim> {
+  async claimBurnShare(ipId: string, userId: string, amountTokens: number): Promise<BurnClaim> {
     const ip = await this.ipService.getIPById(ipId);
     if (!ip) throw new Error("IP not found");
 
@@ -115,8 +114,8 @@ export class LiquidityService {
       .where(
         and(
           eq(schema.liquidityEvents.ip_id, ipId),
-          eq(schema.liquidityEvents.event_type, "BURN_TRIGGERED")
-        )
+          eq(schema.liquidityEvents.event_type, "BURN_TRIGGERED"),
+        ),
       )
       .orderBy((t) => t.created_at)
       .limit(1);
@@ -128,15 +127,15 @@ export class LiquidityService {
     const burnEvent = burnEvents[0];
 
     // Get or create burn claim
-    let burnClaim = await this.db
+    const burnClaim = await this.db
       .select()
       .from(schema.burnClaims)
       .where(
         and(
           eq(schema.burnClaims.ip_id, ipId),
           eq(schema.burnClaims.user_id, userId),
-          eq(schema.burnClaims.liquidity_event_id, burnEvent.id)
-        )
+          eq(schema.burnClaims.liquidity_event_id, burnEvent.id),
+        ),
       )
       .limit(1);
 
@@ -159,7 +158,7 @@ export class LiquidityService {
     // Calculate liquidity share
     const totalTokensToDistribute = ip.current_liquidity;
     const userShare = Math.round(
-      (amountTokens / (ip.total_supply - ip.burned_supply)) * totalTokensToDistribute
+      (amountTokens / (ip.total_supply - ip.burned_supply)) * totalTokensToDistribute,
     );
 
     // Update holder - burn tokens
@@ -171,12 +170,7 @@ export class LiquidityService {
         liquidity_claimed: holder.liquidity_claimed + userShare,
         updated_at: new Date(),
       })
-      .where(
-        and(
-          eq(schema.tokenHolders.ip_id, ipId),
-          eq(schema.tokenHolders.user_id, userId)
-        )
-      );
+      .where(and(eq(schema.tokenHolders.ip_id, ipId), eq(schema.tokenHolders.user_id, userId)));
 
     // Update burn claim
     const result = await this.db
@@ -197,11 +191,13 @@ export class LiquidityService {
     // Update IP burned supply
     const newBurnedSupply = ip.burned_supply + amountTokens;
     const newCirculatingSupply = ip.total_supply - newBurnedSupply;
-    const newCurrentPrice = newCirculatingSupply > 0 ? ip.current_liquidity / newCirculatingSupply : 0;
+    const newLiquidity = Math.max(0, ip.current_liquidity - userShare);
+    const newCurrentPrice = newCirculatingSupply > 0 ? newLiquidity / newCirculatingSupply : 0;
 
     await this.db
       .update(schema.ips)
       .set({
+        current_liquidity: newLiquidity,
         burned_supply: newBurnedSupply,
         circulating_supply: newCirculatingSupply,
         current_price: newCurrentPrice,
@@ -226,19 +222,11 @@ export class LiquidityService {
   /**
    * Get burn claims for a user on an IP
    */
-  async getUserBurnClaims(
-    ipId: string,
-    userId: string
-  ): Promise<BurnClaim[]> {
+  async getUserBurnClaims(ipId: string, userId: string): Promise<BurnClaim[]> {
     return await this.db
       .select()
       .from(schema.burnClaims)
-      .where(
-        and(
-          eq(schema.burnClaims.ip_id, ipId),
-          eq(schema.burnClaims.user_id, userId)
-        )
-      );
+      .where(and(eq(schema.burnClaims.ip_id, ipId), eq(schema.burnClaims.user_id, userId)));
   }
 
   /**
@@ -247,7 +235,7 @@ export class LiquidityService {
   async recordFeeCollection(
     ipId: string,
     feeAmount: number,
-    triggeredBy: string
+    triggeredBy: string,
   ): Promise<LiquidityEvent> {
     const ip = await this.ipService.getIPById(ipId);
     if (!ip) throw new Error("IP not found");
@@ -285,7 +273,7 @@ export class LiquidityService {
       ipId,
       newLiquidity,
       ip.circulating_supply,
-      ip.burned_supply
+      ip.burned_supply,
     );
 
     return event[0];
@@ -294,9 +282,7 @@ export class LiquidityService {
   /**
    * Resolve emergency burn - finalize distribution
    */
-  async resolveEmergencyBurn(
-    eventId: string
-  ): Promise<LiquidityEvent> {
+  async resolveEmergencyBurn(eventId: string): Promise<LiquidityEvent> {
     const now = new Date();
 
     // Get the event
@@ -319,15 +305,12 @@ export class LiquidityService {
       .where(
         and(
           eq(schema.burnClaims.liquidity_event_id, eventId),
-          eq(schema.burnClaims.claim_status, "COMPLETED")
-        )
+          eq(schema.burnClaims.claim_status, "COMPLETED"),
+        ),
       );
 
     const totalTokensBurned = claims.reduce((sum, c) => sum + c.tokens_burned, 0);
-    const totalLiquidityDistributed = claims.reduce(
-      (sum, c) => sum + c.liquidity_share,
-      0
-    );
+    const totalLiquidityDistributed = claims.reduce((sum, c) => sum + c.liquidity_share, 0);
 
     // Update event to resolved
     const result = await this.db

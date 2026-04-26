@@ -7,7 +7,8 @@ export const Route = createFileRoute("/simulation")({
       { title: "IP Token Simulation - Creator Commerce Hub" },
       {
         name: "description",
-        content: "Interactive simulation of IP token mechanics, liquidity management, and emergency burn mechanisms.",
+        content:
+          "Interactive simulation of IP token mechanics, liquidity management, and emergency burn mechanisms.",
       },
     ],
   }),

@@ -95,7 +95,7 @@ export class TransactionService {
       input.buyerId,
       tokensToReceive,
       ip.current_price,
-      amountInCents
+      amountInCents,
     );
 
     // Update IP circulating supply
@@ -104,7 +104,7 @@ export class TransactionService {
       input.ipId,
       ip.current_liquidity,
       newCirculatingSupply,
-      ip.burned_supply
+      ip.burned_supply,
     );
 
     return transaction[0];
@@ -165,8 +165,8 @@ export class TransactionService {
       .where(
         and(
           eq(schema.tokenHolders.ip_id, input.ipId),
-          eq(schema.tokenHolders.user_id, input.sellerId)
-        )
+          eq(schema.tokenHolders.user_id, input.sellerId),
+        ),
       );
 
     // Update IP liquidity and supply
@@ -177,7 +177,7 @@ export class TransactionService {
       input.ipId,
       newLiquidity,
       newCirculatingSupply,
-      ip.burned_supply
+      ip.burned_supply,
     );
 
     // Check for emergency burn threshold
@@ -226,17 +226,14 @@ export class TransactionService {
       .where(eq(schema.transactions.seller_id, userId));
 
     return [...buyTransactions, ...sellTransactions].sort(
-      (a, b) => b.created_at.getTime() - a.created_at.getTime()
+      (a, b) => b.created_at.getTime() - a.created_at.getTime(),
     );
   }
 
   /**
    * Get or create token holder
    */
-  private async getOrCreateTokenHolder(
-    ipId: string,
-    userId: string
-  ): Promise<TokenHolder> {
+  private async getOrCreateTokenHolder(ipId: string, userId: string): Promise<TokenHolder> {
     const existing = await this.getTokenHolder(ipId, userId);
     if (existing) return existing;
 
@@ -269,6 +266,28 @@ export class TransactionService {
     return result[0];
   }
 
+  async ensureTokenHolder(ipId: string, userId: string, initialBalance = 0): Promise<TokenHolder> {
+    const holder = await this.getOrCreateTokenHolder(ipId, userId);
+    if (initialBalance <= 0 || holder.active_balance === initialBalance) {
+      return holder;
+    }
+
+    const now = new Date();
+    await this.db
+      .update(schema.tokenHolders)
+      .set({
+        active_balance: initialBalance,
+        updated_at: now,
+      })
+      .where(and(eq(schema.tokenHolders.ip_id, ipId), eq(schema.tokenHolders.user_id, userId)));
+
+    return {
+      ...holder,
+      active_balance: initialBalance,
+      updated_at: now,
+    };
+  }
+
   /**
    * Get token holder
    */
@@ -276,12 +295,7 @@ export class TransactionService {
     const result = await this.db
       .select()
       .from(schema.tokenHolders)
-      .where(
-        and(
-          eq(schema.tokenHolders.ip_id, ipId),
-          eq(schema.tokenHolders.user_id, userId)
-        )
-      )
+      .where(and(eq(schema.tokenHolders.ip_id, ipId), eq(schema.tokenHolders.user_id, userId)))
       .limit(1);
 
     return result.length > 0 ? result[0] : null;
@@ -295,7 +309,7 @@ export class TransactionService {
     userId: string,
     tokensAdded: number,
     pricePerToken: number,
-    investmentAmount: number
+    investmentAmount: number,
   ): Promise<void> {
     const holder = await this.getOrCreateTokenHolder(ipId, userId);
     const now = new Date();
@@ -313,12 +327,7 @@ export class TransactionService {
         total_invested: totalInvested,
         updated_at: now,
       })
-      .where(
-        and(
-          eq(schema.tokenHolders.ip_id, ipId),
-          eq(schema.tokenHolders.user_id, userId)
-        )
-      );
+      .where(and(eq(schema.tokenHolders.ip_id, ipId), eq(schema.tokenHolders.user_id, userId)));
   }
 
   /**

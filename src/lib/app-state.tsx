@@ -32,9 +32,9 @@ const apiIPToIpAsset = (ip: IP): IpAsset => ({
   creator: ip.creator_id,
   cover: ip.cover_image_url || typeCover.art,
   category: ip.category || "Digital Asset",
-  shares: ip.total_tokens_minted || 1000,
-  pricePerShare: ip.current_price || 1,
-  monthlyRevenue: Math.round(ip.liquidity_pool_usd * 0.1) || 250,
+  shares: ip.total_supply || 1000,
+  pricePerShare: (ip.current_price || 100) / 100,
+  monthlyRevenue: Math.round((ip.current_liquidity || 0) / 10) || 250,
   change24h: 0,
   description: ip.description || "Fractionalized digital asset",
 });
@@ -103,7 +103,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             ...prev,
             signedIn: true,
             walletConnected: true,
-            cashBalance: profile.cash_balance,
+            cashBalance: profile.cash_balance / 100,
           }));
         } catch (error) {
           console.error("Failed to restore auth:", error);
@@ -123,9 +123,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const ips = await ipAPI.list();
       setApiIPs(ips);
       // Update state with fetched IPs as market listings
-      const listings = ips.flatMap((ip) =>
-        seedListings(ip.id, ip.current_price).slice(0, 3)
-      );
+      const listings = ips.flatMap((ip) => seedListings(ip.id, ip.current_price).slice(0, 3));
       setState((prev) => ({
         ...prev,
         marketListings: listings,
@@ -164,14 +162,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         sales: item.sales + (state.contentPurchaseCounts[item.id] ?? 0),
       })),
       ipCatalog: [...state.createdIpAssets, ...apiIPs.map(apiIPToIpAsset)],
-      
+
       // ===== REAL WALLET CONNECT =====
       connectWallet: async () => {
         try {
           setIsLoading(true);
           if (!window.ethereum) {
             throw new Error(
-              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect"
+              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect",
             );
           }
 
@@ -209,7 +207,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
           if (!window.ethereum) {
             throw new Error(
-              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect"
+              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect",
             );
           }
 
@@ -226,11 +224,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const signature = await signer.signMessage(message);
 
           // Login to backend
-          const { user: apiUser, token } = await authAPI.login(
-            walletAddress,
-            message,
-            signature
-          );
+          const { user: apiUser, token } = await authAPI.login(walletAddress, message, signature);
 
           // Store token
           localStorage.setItem(AUTH_TOKEN_KEY, token);
@@ -240,7 +234,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
             ...prev,
             signedIn: true,
             walletConnected: true,
-            cashBalance: apiUser.cash_balance,
+            cashBalance: apiUser.cash_balance / 100,
           }));
 
           // Load user data
@@ -327,7 +321,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
           // If tokenizing, create IP asset on backend
           if (tokenize) {
-            const initialLiquidity = price * 100; // Use price as base liquidity
+            const initialLiquidity = price;
             const newIP = await ipAPI.create({
               title,
               description,
@@ -374,7 +368,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
           // Execute buy on backend
           const total = listing.qty * listing.price;
-          const transaction = await transactionAPI.buy(listing.ipId, total);
+          await transactionAPI.buy(listing.ipId, total);
 
           // Update local state
           setState((prev) => ({
@@ -407,7 +401,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
           // Execute sell on backend
           const total = qty * pricePerShare;
-          const transaction = await transactionAPI.sell(ipId, qty);
+          await transactionAPI.sell(ipId, qty);
 
           // Update local state
           setState((prev) => ({
@@ -429,7 +423,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       // ===== MOCK OPERATIONS (unchanged for compatibility) =====
       purchaseContent: (contentId: string) => {
         const item = [...state.createdContent, ...CONTENT].find(
-          (content) => content.id === contentId
+          (content) => content.id === contentId,
         );
         if (!item) return { ok: false, reason: "Content not found." };
         if (state.ownedContentIds.includes(contentId)) {
@@ -512,7 +506,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           return { ok: false, reason: "Connect your wallet before listing shares." };
         }
         const available = state.ipHoldings[ipId] ?? 0;
-        if (qty < 1 || price <= 0) return { ok: false, reason: "Enter a valid quantity and price." };
+        if (qty < 1 || price <= 0)
+          return { ok: false, reason: "Enter a valid quantity and price." };
         if (available < qty) return { ok: false, reason: "You do not own enough shares." };
 
         setState((prev) => ({
@@ -557,7 +552,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         return { ok: true };
       },
     }),
-    [state, user]
+    [apiIPs, state, user],
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

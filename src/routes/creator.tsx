@@ -168,7 +168,8 @@ function CreatorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                ${(
+                $
+                {(
                   createdProducts.reduce((acc, p) => acc + p.earnings, 0) +
                   createdIPs.reduce((acc, ip) => acc + ip.earnings, 0)
                 ).toFixed(0)}
@@ -183,7 +184,10 @@ function CreatorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {(createdProducts.reduce((acc, p) => acc + p.views, 0) + (createdPosts.reduce((acc, p) => acc + p.views, 0))).toLocaleString()}
+                {(
+                  createdProducts.reduce((acc, p) => acc + p.views, 0) +
+                  createdPosts.reduce((acc, p) => acc + p.views, 0)
+                ).toLocaleString()}
               </div>
               <p className="text-xs text-slate-500 mt-2">All products + posts</p>
             </CardContent>
@@ -195,7 +199,9 @@ function CreatorDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{createdIPs.length}</div>
-              <p className="text-xs text-slate-500 mt-2">{createdIPs.filter(ip => ip.status === 'PUBLIC_TRADING').length} in trading</p>
+              <p className="text-xs text-slate-500 mt-2">
+                {createdIPs.filter((ip) => ip.status === "PUBLIC_TRADING").length} in trading
+              </p>
             </CardContent>
           </Card>
 
@@ -229,13 +235,18 @@ function CreatorDashboard() {
                   <CardTitle className="flex items-center justify-between">
                     <span>Recent IP Activity</span>
                     <Link to="/creator?tab=ip">
-                      <Button variant="outline" size="sm">View All</Button>
+                      <Button variant="outline" size="sm">
+                        View All
+                      </Button>
                     </Link>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {createdIPs.slice(0, 3).map((ip) => (
-                    <div key={ip.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div
+                      key={ip.id}
+                      className="flex items-center justify-between p-3 border rounded-lg"
+                    >
                       <div className="flex-1">
                         <p className="font-medium text-sm">{ip.title}</p>
                         <p className="text-xs text-slate-500">
@@ -267,7 +278,9 @@ function CreatorDashboard() {
                   <CardTitle className="flex items-center justify-between">
                     <span>Recent Products</span>
                     <Link to="/creator?tab=products">
-                      <Button variant="outline" size="sm">View All</Button>
+                      <Button variant="outline" size="sm">
+                        View All
+                      </Button>
                     </Link>
                   </CardTitle>
                 </CardHeader>
@@ -308,9 +321,7 @@ function CreatorDashboard() {
                         <MoreVertical className="w-4 h-4" />
                       </Button>
                     </CardTitle>
-                    <CardDescription>
-                      Launched {ip.createdAt.toLocaleDateString()}
-                    </CardDescription>
+                    <CardDescription>Launched {ip.createdAt.toLocaleDateString()}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
@@ -388,9 +399,7 @@ function CreatorDashboard() {
                         <DollarSign className="w-4 h-4 text-slate-500" />
                         <div>
                           <p className="text-xs text-slate-500">Earnings</p>
-                          <p className="font-bold text-green-600">
-                            ${product.earnings.toFixed(0)}
-                          </p>
+                          <p className="font-bold text-green-600">${product.earnings.toFixed(0)}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -514,9 +523,7 @@ function CreatorDashboard() {
 
       {/* Modals */}
       {ipModalOpen && <IPLaunchModal open={ipModalOpen} onOpenChange={setIpModalOpen} />}
-      {postModalOpen && (
-        <DiscoveryPostModal open={postModalOpen} onOpenChange={setPostModalOpen} />
-      )}
+      {postModalOpen && <DiscoveryPostModal open={postModalOpen} onOpenChange={setPostModalOpen} />}
     </AppShell>
   );
 }

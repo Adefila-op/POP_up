@@ -15,17 +15,20 @@ The **Creator Dashboard** is a comprehensive management hub for creators to laun
 Three primary actions for launching income streams:
 
 #### 🚀 Launch IP
+
 - Create and launch intellectual property as tradable tokens
 - Set initial liquidity (minimum $1,000)
 - Define launch duration (days before buyback enabled)
 - Automatic 30% creator forfeit applied
 
 #### 📦 Post Product
+
 - Sell digital products (PDFs, Art, Tools)
 - Set custom pricing
 - Track sales and earnings
 
 #### 💬 Create Post
+
 - Share content to discovery feed
 - Build audience and credibility
 - Add tags for discoverability
@@ -50,6 +53,7 @@ Four KPI cards showing:
 Quick view of your most recent activity:
 
 **Recent IP Activity**
+
 - Last 3 IP assets launched
 - Current price per token
 - Number of holders
@@ -57,6 +61,7 @@ Quick view of your most recent activity:
 - Total earnings
 
 **Recent Products**
+
 - Last 3 products posted
 - Sales count
 - View count
@@ -68,6 +73,7 @@ Quick view of your most recent activity:
 Full gallery of launched IPs:
 
 Each IP card shows:
+
 - **Title** - IP name
 - **Current Price** - Live trading price
 - **Holders** - Number of token holders
@@ -75,6 +81,7 @@ Each IP card shows:
 - **Earnings** - Total revenue from IP
 
 **Available Actions:**
+
 - View details (link to full IP page)
 - Settings menu (manage, unpublish, etc.)
 
@@ -83,6 +90,7 @@ Each IP card shows:
 Gallery of all posted products:
 
 Each product card displays:
+
 - **Title & Type** - Name and category (PDF, Art, Tool)
 - **Price** - Selling price
 - **Sales** - Number of purchases
@@ -91,6 +99,7 @@ Each product card displays:
 - **Earnings** - Total revenue
 
 **Available Actions:**
+
 - View product (link to product page)
 - Settings menu (edit, unpublish, etc.)
 
@@ -99,6 +108,7 @@ Each product card displays:
 All discovery feed posts created:
 
 Each post shows:
+
 - **Title** - Post headline
 - **Content** - Preview text
 - **Engagement Metrics:**
@@ -109,6 +119,7 @@ Each post shows:
 - **Creation Date**
 
 **Available Actions:**
+
 - Edit post
 - Delete post
 - View analytics
@@ -130,18 +141,21 @@ Revenue breakdown and insights:
 ### 1. Launch IP (Modal)
 
 **Step 1: Details**
+
 - IP Title (required)
 - Description (optional but recommended)
 - Launch Duration in days
 - Click "Next: Set Liquidity"
 
 **Step 2: Liquidity**
+
 - Input initial liquidity amount (minimum $1,000)
 - See automatic 30% forfeit calculation
 - Understand 70% creator keep ratio
 - Verify initial token allocation
 
 **Calculation Example:**
+
 ```
 You invest: $10,000
 30% forfeit (to protocol): -$3,000
@@ -150,12 +164,14 @@ Your tokens received: 7,000 @ $1/token
 ```
 
 **Step 3: Review & Launch**
+
 - Confirm all details
 - Review liquidity calculations
 - Click "Launch IP"
 - Instant confirmation
 
 **After Launch:**
+
 - IP enters LAUNCH_PHASE
 - Buyback disabled (trading only)
 - Floor price locked
@@ -167,21 +183,25 @@ Your tokens received: 7,000 @ $1/token
 ### 2. Post Product (Modal)
 
 **Select Product Type**
+
 - **PDF:** eBooks, guides, reports
 - **Art:** Digital art, illustrations
 - **Tool:** Software, templates, tools
 
 **Fill Product Details**
+
 - Title (required)
 - Description (what's included?)
 - File name (how it's named for downloads)
 - Price (USD, must be > $0)
 
 **Preview**
+
 - See how product appears to buyers
 - Verify all information
 
 **Post Product**
+
 - Instant publication
 - Listed in your portfolio
 - Available on marketplace
@@ -191,23 +211,27 @@ Your tokens received: 7,000 @ $1/token
 ### 3. Create Discovery Post (Modal)
 
 **Edit View**
+
 - **Title:** Main headline (max 120 chars)
 - **Content:** Full post body (max 5,000 chars)
 - **Tags:** Comma-separated topics
 
 **Preview View**
+
 - Live preview as seen by audience
 - Shows engagement metrics (starts at 0)
 - Display of all tags
 - Estimated reach
 
 **Post to Discovery**
+
 - Visible to entire creator community
 - Builds your profile and credibility
 - Drives audience engagement
 - Tags improve discoverability
 
 **Best Practices:**
+
 - Share behind-the-scenes content
 - Post tips and insights
 - Announce new products/IPs
@@ -286,16 +310,19 @@ Your tokens received: 7,000 @ $1/token
 ### For IP Launches
 
 ✅ **Start with clear liquidity plan**
+
 - $5k-$20k typical range
 - Align with audience size
 - Plan for 30-day+ launch phase
 
 ✅ **Use launch phase strategically**
+
 - Build community during launch
 - Price discovery phase
 - Gather initial holders
 
 ✅ **Create supporting content**
+
 - Post about IP launch
 - Share benefits of holding
 - Build FOMO
@@ -303,16 +330,19 @@ Your tokens received: 7,000 @ $1/token
 ### For Product Posting
 
 ✅ **Price appropriately**
+
 - Research competitor prices
 - Value your work fairly
 - Consider launch discounts
 
 ✅ **Quality over quantity**
+
 - 1 great product > 10 mediocre
 - Include detailed description
 - High-quality cover image
 
 ✅ **Promote strategically**
+
 - Post about new products
 - Link in discovery posts
 - Cross-promote with IPs
@@ -320,16 +350,19 @@ Your tokens received: 7,000 @ $1/token
 ### For Discovery Posts
 
 ✅ **Post consistently**
+
 - 2-3x per week optimal
 - Mix content types
 - Maintain audience
 
 ✅ **Engage genuinely**
+
 - Respond to comments
 - Share others' content
 - Build community
 
 ✅ **Use data to optimize**
+
 - Track what gets engagement
 - Refine messaging
 - Double down on winners
@@ -338,16 +371,16 @@ Your tokens received: 7,000 @ $1/token
 
 ## Dashboard Navigation Tips
 
-| Goal | Path |
-|------|------|
-| See all earnings | Analytics tab |
-| Track IP holders | IP Assets tab |
-| Monitor sales | Products tab |
-| Check engagement | Posts tab |
-| Quick overview | Overview tab |
-| Launch new IP | Click "Launch IP" button |
-| Post new product | Click "Post Product" button |
-| Share to community | Click "Create Post" button |
+| Goal               | Path                        |
+| ------------------ | --------------------------- |
+| See all earnings   | Analytics tab               |
+| Track IP holders   | IP Assets tab               |
+| Monitor sales      | Products tab                |
+| Check engagement   | Posts tab                   |
+| Quick overview     | Overview tab                |
+| Launch new IP      | Click "Launch IP" button    |
+| Post new product   | Click "Post Product" button |
+| Share to community | Click "Create Post" button  |
 
 ---
 
@@ -395,6 +428,7 @@ Month 5+: Scale what works, automate
 ## What's Next?
 
 After creating dashboard content:
+
 - **Monitor KPIs** - Watch earnings grow
 - **Engage audience** - Respond to comments
 - **Iterate** - Refine based on data

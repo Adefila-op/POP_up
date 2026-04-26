@@ -1,12 +1,12 @@
-FROM node:20-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies with esbuild
-RUN npm install --legacy-peer-deps --production && npm install --save-dev esbuild --legacy-peer-deps
+# Install dependencies with legacy peer deps support
+RUN npm install --legacy-peer-deps
 
 # Copy source code  
 COPY server ./server

@@ -70,7 +70,12 @@ export interface LiquidityEventRecord {
 }
 
 export interface SimulationEvent {
-  type: "TRANSACTION" | "LIQUIDITY_EVENT" | "STATUS_CHANGE" | "EMERGENCY_TRIGGER" | "EMERGENCY_RESOLVE";
+  type:
+    | "TRANSACTION"
+    | "LIQUIDITY_EVENT"
+    | "STATUS_CHANGE"
+    | "EMERGENCY_TRIGGER"
+    | "EMERGENCY_RESOLVE";
   data: TransactionRecord | LiquidityEventRecord | IPState;
   timestamp: number;
 }
@@ -101,7 +106,7 @@ export class IPTokenSimulation {
     creatorId: string,
     title: string,
     initialLiquidityUSD: number,
-    launchDurationDays: number
+    launchDurationDays: number,
   ): SimulationState {
     const now = Date.now();
     const launchEndDate = now + launchDurationDays * 24 * 60 * 60 * 1000;

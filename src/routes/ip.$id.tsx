@@ -62,8 +62,8 @@ function IpDetailPage() {
     );
   }
 
-  const handleBuy = (listing: MarketListing) => {
-    const result = buyIpListing(listing.id);
+  const handleBuy = async (listing: MarketListing) => {
+    const result = await buyIpListing(listing.id);
     if (!result.ok) {
       toast.error(result.reason ?? "Could not complete purchase.");
       return;
@@ -86,8 +86,8 @@ function IpDetailPage() {
     toast.success(`Listed ${listQty} for $${listPrice} each`);
   };
 
-  const handleBuyback = () => {
-    const result = sellIpToPool({ ipId: ip.id, qty: 1, pricePerShare: buybackPrice });
+  const handleBuyback = async () => {
+    const result = await sellIpToPool({ ipId: ip.id, qty: 1, pricePerShare: buybackPrice });
     if (!result.ok) {
       toast.error(result.reason ?? "Could not sell to pool.");
       return;
@@ -151,7 +151,7 @@ function IpDetailPage() {
               <p className="text-[11px] opacity-70">per share - instant exit</p>
             </div>
             <button
-              onClick={handleBuyback}
+              onClick={() => void handleBuyback()}
               className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-105 active:scale-95"
             >
               Sell 1 to pool
@@ -290,7 +290,7 @@ function IpDetailPage() {
                   </div>
                   {!isYou ? (
                     <button
-                      onClick={() => handleBuy(listing)}
+                      onClick={() => void handleBuy(listing)}
                       disabled={!walletConnected}
                       className="ml-1 inline-flex items-center gap-1 rounded-full bg-ink px-3 py-2 text-xs font-semibold text-ink-foreground transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                     >

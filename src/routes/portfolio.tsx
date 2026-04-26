@@ -17,12 +17,22 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioPage() {
-  const { walletConnected, connectWallet, contentCatalog, ipCatalog, ownedContentIds, ipHoldings, cashBalance, contentOrders, savedContentIds, createdIpAssets } =
-    useAppState();
+  const {
+    walletConnected,
+    connectWallet,
+    contentCatalog,
+    ipCatalog,
+    ownedContentIds,
+    ipHoldings,
+    cashBalance,
+    contentOrders,
+    savedContentIds,
+    createdIpAssets,
+  } = useAppState();
   const { isConnected } = useAccount();
   const [view, setView] = useState<"portfolio" | "creator">("portfolio");
   const [isConnecting, setIsConnecting] = useState(false);
-  
+
   const library = contentCatalog.filter((item) => ownedContentIds.includes(item.id));
   const saved = contentCatalog.filter((item) => savedContentIds.includes(item.id));
   const holdings = ipCatalog
@@ -58,7 +68,7 @@ function PortfolioPage() {
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
             Your holdings, library, and pool positions stay hidden until a wallet is connected.
           </p>
-          
+
           <div className="mt-5 grid grid-cols-3 gap-2 text-xs">
             <Mini label="Wallet" value={isConnected ? "Ready" : "Connect"} />
             <Mini label="Library" value="Locked" />
@@ -108,227 +118,239 @@ function PortfolioPage() {
 
       {view === "portfolio" ? (
         <>
-      <section className="rounded-3xl bg-ink p-6 text-ink-foreground shadow-ink">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs opacity-70">Total balance</p>
-            <p className="mt-1 text-3xl font-bold">${(totalIp + cashBalance).toFixed(2)}</p>
-          </div>
-          <Wallet className="h-6 w-6 opacity-60" />
-        </div>
-        <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
-          <Mini label="Cash" value={`$${cashBalance.toFixed(2)}`} />
-          <Mini label="IP value" value={`$${totalIp.toFixed(0)}`} />
-        </div>
-      </section>
-
-      {/* IP Holdings */}
-      <section className="mt-6">
-        <SectionHead icon={<Coins className="h-4 w-4" />} title="IP holdings" />
-        <div className="space-y-3">
-          {holdings.map(({ ip, shares }) => (
-            <Link
-              key={ip.id}
-              to="/ip/$id"
-              params={{ id: ip.id }}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
-            >
-              <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{ip.title}</p>
-                <p className="text-xs text-muted-foreground">{shares} shares</p>
+          <section className="rounded-3xl bg-ink p-6 text-ink-foreground shadow-ink">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs opacity-70">Total balance</p>
+                <p className="mt-1 text-3xl font-bold">${(totalIp + cashBalance).toFixed(2)}</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-bold">${(shares * ip.pricePerShare).toFixed(2)}</p>
-                <p
-                  className={`text-xs font-semibold ${ip.change24h >= 0 ? "text-success" : "text-destructive"}`}
-                >
-                  <TrendingUp
-                    className={`inline h-3 w-3 ${ip.change24h < 0 ? "rotate-180" : ""}`}
-                  />{" "}
-                  {ip.change24h >= 0 ? "+" : ""}
-                  {ip.change24h}%
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Library */}
-      <section className="mt-6">
-        <SectionHead icon={<Library className="h-4 w-4" />} title="My library" />
-        <div className="space-y-3">
-          {library.map((item) => (
-            <Link
-              key={item.id}
-              to="/content/$id"
-              params={{ id: item.id }}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
-            >
-              <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{item.title}</p>
-                <p className="text-xs capitalize text-muted-foreground">
-                  {item.type} · {item.creator}
-                </p>
-              </div>
-              <span className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-semibold text-success-foreground">
-                Owned
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="mt-6">
-        <SectionHead icon={<Wallet className="h-4 w-4" />} title="Recent orders" />
-        <div className="space-y-3">
-          {contentOrders.slice(0, 5).map((order) => (
-            <div key={order.id} className="rounded-2xl bg-card p-3 shadow-soft">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{order.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <p className="text-sm font-bold">{order.amount === 0 ? "Free" : `-$${order.amount.toFixed(2)}`}</p>
-              </div>
+              <Wallet className="h-6 w-6 opacity-60" />
             </div>
-          ))}
-          {contentOrders.length === 0 && (
-            <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
-              No purchases yet.
-            </p>
-          )}
-        </div>
-      </section>
+            <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
+              <Mini label="Cash" value={`$${cashBalance.toFixed(2)}`} />
+              <Mini label="IP value" value={`$${totalIp.toFixed(0)}`} />
+            </div>
+          </section>
 
-      <section className="mt-6">
-        <SectionHead icon={<ShieldCheck className="h-4 w-4" />} title="Saved items" />
-        <div className="space-y-3">
-          {saved.slice(0, 4).map((item) => (
-            <Link
-              key={item.id}
-              to="/content/$id"
-              params={{ id: item.id }}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
-            >
-              <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.creator}</p>
-              </div>
-              <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-semibold text-muted-foreground">
-                Saved
-              </span>
-            </Link>
-          ))}
-          {saved.length === 0 && (
-            <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
-              Save items from Discover to keep them here.
-            </p>
-          )}
-        </div>
-      </section>
+          {/* IP Holdings */}
+          <section className="mt-6">
+            <SectionHead icon={<Coins className="h-4 w-4" />} title="IP holdings" />
+            <div className="space-y-3">
+              {holdings.map(({ ip, shares }) => (
+                <Link
+                  key={ip.id}
+                  to="/ip/$id"
+                  params={{ id: ip.id }}
+                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
+                >
+                  <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{ip.title}</p>
+                    <p className="text-xs text-muted-foreground">{shares} shares</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">${(shares * ip.pricePerShare).toFixed(2)}</p>
+                    <p
+                      className={`text-xs font-semibold ${ip.change24h >= 0 ? "text-success" : "text-destructive"}`}
+                    >
+                      <TrendingUp
+                        className={`inline h-3 w-3 ${ip.change24h < 0 ? "rotate-180" : ""}`}
+                      />{" "}
+                      {ip.change24h >= 0 ? "+" : ""}
+                      {ip.change24h}%
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* Library */}
+          <section className="mt-6">
+            <SectionHead icon={<Library className="h-4 w-4" />} title="My library" />
+            <div className="space-y-3">
+              {library.map((item) => (
+                <Link
+                  key={item.id}
+                  to="/content/$id"
+                  params={{ id: item.id }}
+                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
+                >
+                  <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{item.title}</p>
+                    <p className="text-xs capitalize text-muted-foreground">
+                      {item.type} · {item.creator}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-semibold text-success-foreground">
+                    Owned
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <SectionHead icon={<Wallet className="h-4 w-4" />} title="Recent orders" />
+            <div className="space-y-3">
+              {contentOrders.slice(0, 5).map((order) => (
+                <div key={order.id} className="rounded-2xl bg-card p-3 shadow-soft">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold">{order.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold">
+                      {order.amount === 0 ? "Free" : `-$${order.amount.toFixed(2)}`}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {contentOrders.length === 0 && (
+                <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
+                  No purchases yet.
+                </p>
+              )}
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <SectionHead icon={<ShieldCheck className="h-4 w-4" />} title="Saved items" />
+            <div className="space-y-3">
+              {saved.slice(0, 4).map((item) => (
+                <Link
+                  key={item.id}
+                  to="/content/$id"
+                  params={{ id: item.id }}
+                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
+                >
+                  <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">{item.creator}</p>
+                  </div>
+                  <span className="rounded-full bg-secondary px-2 py-1 text-[10px] font-semibold text-muted-foreground">
+                    Saved
+                  </span>
+                </Link>
+              ))}
+              {saved.length === 0 && (
+                <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
+                  Save items from Discover to keep them here.
+                </p>
+              )}
+            </div>
+          </section>
         </>
       ) : (
-      /* Creator Dashboard View */
-      <>
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3">
-          <section className="rounded-3xl bg-card p-4 shadow-soft">
-            <p className="text-xs text-muted-foreground">Total Earnings</p>
-            <p className="mt-2 text-2xl font-bold">${(createdIpAssets.length * 5000 + contentCatalog.length * 1000).toFixed(0)}</p>
-          </section>
-          <section className="rounded-3xl bg-card p-4 shadow-soft">
-            <p className="text-xs text-muted-foreground">Active IPs</p>
-            <p className="mt-2 text-2xl font-bold">{createdIpAssets.length}</p>
-          </section>
-        </div>
+        /* Creator Dashboard View */
+        <>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 gap-3">
+            <section className="rounded-3xl bg-card p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground">Total Earnings</p>
+              <p className="mt-2 text-2xl font-bold">
+                ${(createdIpAssets.length * 5000 + contentCatalog.length * 1000).toFixed(0)}
+              </p>
+            </section>
+            <section className="rounded-3xl bg-card p-4 shadow-soft">
+              <p className="text-xs text-muted-foreground">Active IPs</p>
+              <p className="mt-2 text-2xl font-bold">{createdIpAssets.length}</p>
+            </section>
+          </div>
 
-        {/* Launch IP Section */}
-        <section className="mt-6">
-          <SectionHead icon={<Coins className="h-4 w-4" />} title="Your IP Assets" />
-          <Link 
-            to="/creator"
-            className="block rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-4 shadow-soft text-white hover:shadow-lg transition"
-          >
-            <p className="font-semibold flex items-center gap-2">
-              <span className="text-xl">⚡</span> Launch IP Asset
-            </p>
-            <p className="text-xs mt-1 opacity-90">Create and tokenize your intellectual property</p>
-          </Link>
-          {createdIpAssets.length === 0 && (
-            <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft mt-3">
-              No IP assets yet. Launch your first IP to get started.
-            </p>
-          )}
-          {createdIpAssets.map((ip) => (
+          {/* Launch IP Section */}
+          <section className="mt-6">
+            <SectionHead icon={<Coins className="h-4 w-4" />} title="Your IP Assets" />
             <Link
-              key={ip.id}
-              to="/ip/$id"
-              params={{ id: ip.id }}
-              className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
+              to="/creator"
+              className="block rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-4 shadow-soft text-white hover:shadow-lg transition"
             >
-              <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold">{ip.title}</p>
-                <p className="text-xs text-muted-foreground">{ip.totalSupply} tokens</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm font-bold">${ip.pricePerShare.toFixed(2)}</p>
-                <p className="text-xs text-success">+5.2%</p>
-              </div>
+              <p className="font-semibold flex items-center gap-2">
+                <span className="text-xl">⚡</span> Launch IP Asset
+              </p>
+              <p className="text-xs mt-1 opacity-90">
+                Create and tokenize your intellectual property
+              </p>
             </Link>
-          ))}
-        </section>
-
-        {/* Products Section */}
-        <section className="mt-6">
-          <SectionHead icon={<Library className="h-4 w-4" />} title="Your Products" />
-          {contentCatalog.length === 0 ? (
-            <div className="rounded-2xl bg-card p-4 shadow-soft">
-              <p className="text-sm text-muted-foreground">No products yet.</p>
-              <p className="text-xs text-muted-foreground mt-1">Navigate to Upload to add your first product.</p>
-            </div>
-          ) : (
-            contentCatalog.slice(0, 3).map((item) => (
+            {createdIpAssets.length === 0 && (
+              <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft mt-3">
+                No IP assets yet. Launch your first IP to get started.
+              </p>
+            )}
+            {createdIpAssets.map((ip) => (
               <Link
-                key={item.id}
-                to="/content/$id"
-                params={{ id: item.id }}
+                key={ip.id}
+                to="/ip/$id"
+                params={{ id: ip.id }}
                 className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
               >
-                <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold">{item.title}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{item.type} · ${item.price}</p>
+                  <p className="truncate font-semibold">{ip.title}</p>
+                  <p className="text-xs text-muted-foreground">{ip.shares} tokens</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-bold">{item.sales} sales</p>
-                  <p className="text-xs text-muted-foreground">⭐ {item.rating}</p>
+                  <p className="text-sm font-bold">${ip.pricePerShare.toFixed(2)}</p>
+                  <p className="text-xs text-success">+5.2%</p>
                 </div>
               </Link>
-            ))
-          )}
-        </section>
+            ))}
+          </section>
 
-        {/* Repost to Discovery */}
-        <section className="mt-6">
-          <SectionHead icon={<TrendingUp className="h-4 w-4" />} title="Repost & Promote" />
-          <Link 
-            to="/creator"
-            className="block rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-4 shadow-soft text-white hover:shadow-lg transition"
-          >
-            <p className="font-semibold flex items-center gap-2">
-              <span className="text-xl">📢</span> Repost Product to Discovery
-            </p>
-            <p className="text-xs mt-1 opacity-90">Share your products with the creator community</p>
-          </Link>
-        </section>
-      </>
+          {/* Products Section */}
+          <section className="mt-6">
+            <SectionHead icon={<Library className="h-4 w-4" />} title="Your Products" />
+            {contentCatalog.length === 0 ? (
+              <div className="rounded-2xl bg-card p-4 shadow-soft">
+                <p className="text-sm text-muted-foreground">No products yet.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Navigate to Upload to add your first product.
+                </p>
+              </div>
+            ) : (
+              contentCatalog.slice(0, 3).map((item) => (
+                <Link
+                  key={item.id}
+                  to="/content/$id"
+                  params={{ id: item.id }}
+                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
+                >
+                  <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{item.title}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {item.type} · ${item.price}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold">{item.sales} sales</p>
+                    <p className="text-xs text-muted-foreground">⭐ {item.rating}</p>
+                  </div>
+                </Link>
+              ))
+            )}
+          </section>
+
+          {/* Repost to Discovery */}
+          <section className="mt-6">
+            <SectionHead icon={<TrendingUp className="h-4 w-4" />} title="Repost & Promote" />
+            <Link
+              to="/creator"
+              className="block rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-4 shadow-soft text-white hover:shadow-lg transition"
+            >
+              <p className="font-semibold flex items-center gap-2">
+                <span className="text-xl">📢</span> Repost Product to Discovery
+              </p>
+              <p className="text-xs mt-1 opacity-90">
+                Share your products with the creator community
+              </p>
+            </Link>
+          </section>
+        </>
       )}
     </AppShell>
   );

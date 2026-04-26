@@ -9,6 +9,11 @@ import postgres from "postgres";
 import * as schema from "./schema";
 
 export type DatabaseClient = ReturnType<typeof drizzlePostgres> | ReturnType<typeof drizzleD1>;
+type DatabaseEnv = {
+  DB?: D1Database;
+  DATABASE_URL?: string;
+  SUPABASE_URL?: string;
+};
 
 /**
  * Initialize database client from Cloudflare D1 binding
@@ -35,7 +40,7 @@ export function initializePostgresDatabase(connectionString: string): DatabaseCl
 /**
  * Auto-detect and initialize database based on environment
  */
-export function initializeDatabase(env: any): DatabaseClient {
+export function initializeDatabase(env: DatabaseEnv): DatabaseClient {
   // If Cloudflare D1 binding exists, use it
   if (env.DB) {
     console.log("Using Cloudflare D1 database");
@@ -44,15 +49,12 @@ export function initializeDatabase(env: any): DatabaseClient {
 
   // If PostgreSQL connection string exists, use it
   if (env.DATABASE_URL || env.SUPABASE_URL) {
-    const connectionString =
-      env.DATABASE_URL || env.SUPABASE_URL;
+    const connectionString = env.DATABASE_URL || env.SUPABASE_URL;
     console.log("Using PostgreSQL database");
     return initializePostgresDatabase(connectionString);
   }
 
-  throw new Error(
-    "No database configured. Set DB (Cloudflare D1) or DATABASE_URL (PostgreSQL)"
-  );
+  throw new Error("No database configured. Set DB (Cloudflare D1) or DATABASE_URL (PostgreSQL)");
 }
 
 export { schema };

@@ -8,12 +8,14 @@
 export class ValidationError extends Error {
   constructor(
     public field: string,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "ValidationError";
   }
 }
+
+type ValidationInput = Record<string, unknown>;
 
 /**
  * Validate email
@@ -54,14 +56,14 @@ export function validateTokenAmount(amount: number): boolean {
 /**
  * Validate positive number
  */
-export function validatePositiveNumber(value: any): value is number {
+export function validatePositiveNumber(value: unknown): value is number {
   return typeof value === "number" && value > 0 && Number.isFinite(value);
 }
 
 /**
  * Validate required string
  */
-export function validateRequiredString(value: any): value is string {
+export function validateRequiredString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
@@ -69,7 +71,6 @@ export function validateRequiredString(value: any): value is string {
  * Create IP input validation
  */
 export interface CreateIPValidationInput {
-  creatorId: string;
   title: string;
   description?: string;
   category: string;
@@ -78,12 +79,7 @@ export interface CreateIPValidationInput {
   launchDurationDays: number;
 }
 
-export function validateCreateIPInput(
-  input: any
-): input is CreateIPValidationInput {
-  if (!validateRequiredString(input.creatorId)) {
-    throw new ValidationError("creatorId", "Creator ID is required");
-  }
+export function validateCreateIPInput(input: ValidationInput): input is CreateIPValidationInput {
   if (!validateRequiredString(input.title)) {
     throw new ValidationError("title", "Title is required");
   }
@@ -91,16 +87,10 @@ export function validateCreateIPInput(
     throw new ValidationError("category", "Category is required");
   }
   if (!validateUSDAmount(input.initialLiquidityUSD)) {
-    throw new ValidationError(
-      "initialLiquidityUSD",
-      "Initial liquidity must be a positive number"
-    );
+    throw new ValidationError("initialLiquidityUSD", "Initial liquidity must be a positive number");
   }
   if (!Number.isInteger(input.launchDurationDays) || input.launchDurationDays < 1) {
-    throw new ValidationError(
-      "launchDurationDays",
-      "Launch duration must be a positive integer"
-    );
+    throw new ValidationError("launchDurationDays", "Launch duration must be a positive integer");
   }
   return true;
 }
@@ -110,18 +100,14 @@ export function validateCreateIPInput(
  */
 export interface BuyTransactionValidationInput {
   ipId: string;
-  buyerId: string;
   amountUSD: number;
 }
 
 export function validateBuyTransactionInput(
-  input: any
+  input: ValidationInput,
 ): input is BuyTransactionValidationInput {
   if (!validateRequiredString(input.ipId)) {
     throw new ValidationError("ipId", "IP ID is required");
-  }
-  if (!validateRequiredString(input.buyerId)) {
-    throw new ValidationError("buyerId", "Buyer ID is required");
   }
   if (!validateUSDAmount(input.amountUSD)) {
     throw new ValidationError("amountUSD", "Amount must be a positive number");
@@ -134,24 +120,17 @@ export function validateBuyTransactionInput(
  */
 export interface SellTransactionValidationInput {
   ipId: string;
-  sellerId: string;
   amountTokens: number;
 }
 
 export function validateSellTransactionInput(
-  input: any
+  input: ValidationInput,
 ): input is SellTransactionValidationInput {
   if (!validateRequiredString(input.ipId)) {
     throw new ValidationError("ipId", "IP ID is required");
   }
-  if (!validateRequiredString(input.sellerId)) {
-    throw new ValidationError("sellerId", "Seller ID is required");
-  }
   if (!validateTokenAmount(input.amountTokens)) {
-    throw new ValidationError(
-      "amountTokens",
-      "Token amount must be a positive number"
-    );
+    throw new ValidationError("amountTokens", "Token amount must be a positive number");
   }
   return true;
 }

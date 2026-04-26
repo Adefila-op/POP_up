@@ -8,11 +8,8 @@ import { IPService } from "../services/ip-service";
 import { TransactionService } from "../services/transaction-service";
 import { LiquidityService } from "../services/liquidity-service";
 import { UserService } from "../services/user-service";
-import { authenticateRequest, requireAuth, optionalAuthenticate } from "../middleware/auth";
-import {
-  validateCreateIPInput,
-  ValidationError,
-} from "../utils/validation";
+import { authenticateRequest, requireAuth } from "../middleware/auth";
+import { validateCreateIPInput } from "../utils/validation";
 import {
   createSuccessResponse,
   createHTTPResponse,
@@ -20,7 +17,11 @@ import {
   AppError,
   ERROR_CODES,
 } from "../utils/errors";
-import type { AuthContext } from "../middleware/auth";
+import type { IPStatus } from "../db/types";
+
+function isIPStatus(value: string): value is IPStatus {
+  return ["CREATED", "LAUNCH_PHASE", "PUBLIC_TRADING", "MATURE"].includes(value);
+}
 
 export interface IPRoutesOptions {
   db: DatabaseClient;
@@ -32,13 +33,7 @@ export interface IPRoutesOptions {
 
 export function createIPRoutes(options: IPRoutesOptions): Hono {
   const router = new Hono();
-  const {
-    db,
-    ipService,
-    transactionService,
-    liquidityService,
-    userService,
-  } = options;
+  const { db, ipService, transactionService, liquidityService, userService } = options;
 
   /**
    * POST /api/ips - Create new IP
@@ -61,13 +56,8 @@ export function createIPRoutes(options: IPRoutesOptions): Hono {
         launchDurationDays: body.launchDurationDays,
       });
 
-      // Create initial token holder for creator
-      const creatorTokens = ip.total_supply;
-      await transactionService.getTokenHolder(ip.id, auth.user.id) ||
-        (await (transactionService as any).getOrCreateTokenHolder(
-          ip.id,
-          auth.user.id
-        ));
+      // Create initial token holder for creator with the minted supply
+      await transactionService.ensureTokenHolder(ip.id, auth.user.id, ip.total_supply);
 
       const response = createSuccessResponse(ip, 201);
       return createHTTPResponse(response);
@@ -86,11 +76,7 @@ export function createIPRoutes(options: IPRoutesOptions): Hono {
       const ip = await ipService.getIPById(ipId);
 
       if (!ip) {
-        throw new AppError(
-          ERROR_CODES.IP_NOT_FOUND,
-          "IP not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.IP_NOT_FOUND, "IP not found", 404);
       }
 
       const response = createSuccessResponse(ip, 200);
@@ -107,10 +93,16 @@ export function createIPRoutes(options: IPRoutesOptions): Hono {
   router.get("/api/ips", async (c) => {
     try {
       const status = c.req.query("status");
+      const creatorId = c.req.query("creatorId");
 
       let ips;
-      if (status) {
-        ips = await ipService.getIPsByStatus(status as any);
+      if (creatorId) {
+        ips = await ipService.getIPsByCreator(creatorId);
+      } else if (status) {
+        if (!isIPStatus(status)) {
+          throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Invalid IP status", 400);
+        }
+        ips = await ipService.getIPsByStatus(status);
       } else {
         // Get all IPs (could be paginated)
         ips = await (db.query.ips ? db.query.ips.findMany() : []);
@@ -133,11 +125,7 @@ export function createIPRoutes(options: IPRoutesOptions): Hono {
 
       const ip = await ipService.getIPById(ipId);
       if (!ip) {
-        throw new AppError(
-          ERROR_CODES.IP_NOT_FOUND,
-          "IP not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.IP_NOT_FOUND, "IP not found", 404);
       }
 
       const holders = await transactionService.getIPTokenHolders(ipId);
@@ -158,11 +146,7 @@ export function createIPRoutes(options: IPRoutesOptions): Hono {
 
       const ip = await ipService.getIPById(ipId);
       if (!ip) {
-        throw new AppError(
-          ERROR_CODES.IP_NOT_FOUND,
-          "IP not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.IP_NOT_FOUND, "IP not found", 404);
       }
 
       const transactions = await transactionService.getTransactionsByIP(ipId);
@@ -183,11 +167,7 @@ export function createIPRoutes(options: IPRoutesOptions): Hono {
 
       const ip = await ipService.getIPById(ipId);
       if (!ip) {
-        throw new AppError(
-          ERROR_CODES.IP_NOT_FOUND,
-          "IP not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.IP_NOT_FOUND, "IP not found", 404);
       }
 
       const events = await liquidityService.getLiquidityEvents(ipId);

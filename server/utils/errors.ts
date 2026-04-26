@@ -7,7 +7,7 @@ export interface ErrorResponse {
   error: {
     code: string;
     message: string;
-    details?: Record<string, any>;
+    details?: Record<string, unknown>;
   };
   statusCode: number;
 }
@@ -23,7 +23,7 @@ export class AppError extends Error {
     public code: string,
     message: string,
     public statusCode: number = 400,
-    public details?: Record<string, any>
+    public details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = "AppError";
@@ -55,7 +55,7 @@ export function createErrorResponse(
   code: string,
   message: string,
   statusCode: number = 400,
-  details?: Record<string, any>
+  details?: Record<string, unknown>,
 ): ErrorResponse {
   return {
     success: false,
@@ -67,10 +67,7 @@ export function createErrorResponse(
 /**
  * Create success response
  */
-export function createSuccessResponse<T>(
-  data: T,
-  statusCode: number = 200
-): SuccessResponse<T> {
+export function createSuccessResponse<T>(data: T, statusCode: number = 200): SuccessResponse<T> {
   return {
     success: true,
     data,
@@ -81,43 +78,26 @@ export function createSuccessResponse<T>(
 /**
  * Handle errors and format response
  */
-export function handleError(error: any): ErrorResponse {
+export function handleError(error: unknown): ErrorResponse {
   if (error instanceof AppError) {
-    return createErrorResponse(
-      error.code,
-      error.message,
-      error.statusCode,
-      error.details
-    );
+    return createErrorResponse(error.code, error.message, error.statusCode, error.details);
   }
 
   if (error instanceof Error) {
-    return createErrorResponse(
-      ERROR_CODES.INTERNAL_ERROR,
-      error.message,
-      500
-    );
+    return createErrorResponse(ERROR_CODES.INTERNAL_ERROR, error.message, 500);
   }
 
-  return createErrorResponse(
-    ERROR_CODES.INTERNAL_ERROR,
-    "An unexpected error occurred",
-    500
-  );
+  return createErrorResponse(ERROR_CODES.INTERNAL_ERROR, "An unexpected error occurred", 500);
 }
 
 /**
  * Create HTTP response
  */
-export function createHTTPResponse(
-  response: ErrorResponse | SuccessResponse<any>
-): Response {
+export function createHTTPResponse<T>(response: ErrorResponse | SuccessResponse<T>): Response {
   const statusCode = response.statusCode;
   const body = {
     success: response.success,
-    ...(response.success
-      ? { data: response.data }
-      : { error: response.error }),
+    ...(response.success ? { data: response.data } : { error: response.error }),
   };
 
   return new Response(JSON.stringify(body), {

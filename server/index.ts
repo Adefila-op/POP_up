@@ -13,7 +13,7 @@ import { UserService } from "./services/user-service";
 import { createIPRoutes } from "./routes/ip-routes";
 import { createTransactionRoutes } from "./routes/transaction-routes";
 import { createUserRoutes } from "./routes/user-routes";
-import { createHTTPResponse, createSuccessResponse } from "./utils/errors";
+import { createHTTPResponse, createSuccessResponse, ERROR_CODES } from "./utils/errors";
 
 export interface Env {
   DB: D1Database;
@@ -33,7 +33,7 @@ export function createApp(env: Env): Hono<{ Bindings: Env }> {
       origin: "*",
       allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
-    })
+    }),
   );
 
   // Initialize database
@@ -53,7 +53,7 @@ export function createApp(env: Env): Hono<{ Bindings: Env }> {
   });
 
   // Update liquidity service with transaction service (circular dependency resolution)
-  (liquidityService as any).transactionService = transactionService;
+  liquidityService.setTransactionService(transactionService);
 
   // Health check
   app.get("/health", (c) => {
@@ -63,10 +63,13 @@ export function createApp(env: Env): Hono<{ Bindings: Env }> {
 
   // API version
   app.get("/api/version", (c) => {
-    const response = createSuccessResponse({
-      version: "1.0.0",
-      environment: env.ENVIRONMENT || "production",
-    }, 200);
+    const response = createSuccessResponse(
+      {
+        version: "1.0.0",
+        environment: env.ENVIRONMENT || "production",
+      },
+      200,
+    );
     return createHTTPResponse(response);
   });
 
@@ -95,11 +98,18 @@ export function createApp(env: Env): Hono<{ Bindings: Env }> {
 
   // 404 handler
   app.notFound((c) => {
-    const response = createSuccessResponse({
-      error: "Not Found",
-      path: c.req.path,
-      method: c.req.method,
-    }, 404);
+    const response = {
+      success: false as const,
+      error: {
+        code: ERROR_CODES.NOT_FOUND,
+        message: "Not Found",
+        details: {
+          path: c.req.path,
+          method: c.req.method,
+        },
+      },
+      statusCode: 404,
+    };
     return createHTTPResponse(response);
   });
 

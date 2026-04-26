@@ -106,12 +106,9 @@ export class UserService {
         username: input.username !== undefined ? input.username : undefined,
         email: input.email !== undefined ? input.email : undefined,
         profile_picture_url:
-          input.profilePictureUrl !== undefined
-            ? input.profilePictureUrl
-            : undefined,
+          input.profilePictureUrl !== undefined ? input.profilePictureUrl : undefined,
         bio: input.bio !== undefined ? input.bio : undefined,
-        is_creator:
-          input.isCreator !== undefined ? input.isCreator : undefined,
+        is_creator: input.isCreator !== undefined ? input.isCreator : undefined,
         updated_at: now,
       })
       .where(eq(schema.users.id, userId))
@@ -130,14 +127,12 @@ export class UserService {
   async updateCashBalance(
     userId: string,
     amount: number, // in USD cents
-    isAddition: boolean = true
+    isAddition: boolean = true,
   ): Promise<User> {
     const user = await this.getUserById(userId);
     if (!user) throw new Error("User not found");
 
-    const newBalance = isAddition
-      ? user.cash_balance + amount
-      : user.cash_balance - amount;
+    const newBalance = isAddition ? user.cash_balance + amount : user.cash_balance - amount;
 
     if (newBalance < 0) {
       throw new Error("Insufficient cash balance");

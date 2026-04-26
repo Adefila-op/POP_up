@@ -96,11 +96,7 @@ export class IPService {
    * Get IP by ID
    */
   async getIPById(ipId: string): Promise<IP | null> {
-    const result = await this.db
-      .select()
-      .from(schema.ips)
-      .where(eq(schema.ips.id, ipId))
-      .limit(1);
+    const result = await this.db.select().from(schema.ips).where(eq(schema.ips.id, ipId)).limit(1);
 
     return result.length > 0 ? result[0] : null;
   }
@@ -109,20 +105,14 @@ export class IPService {
    * Get all IPs by creator
    */
   async getIPsByCreator(creatorId: string): Promise<IP[]> {
-    return await this.db
-      .select()
-      .from(schema.ips)
-      .where(eq(schema.ips.creator_id, creatorId));
+    return await this.db.select().from(schema.ips).where(eq(schema.ips.creator_id, creatorId));
   }
 
   /**
    * Get all IPs with specific status
    */
   async getIPsByStatus(status: IPStatus): Promise<IP[]> {
-    return await this.db
-      .select()
-      .from(schema.ips)
-      .where(eq(schema.ips.status, status));
+    return await this.db.select().from(schema.ips).where(eq(schema.ips.status, status));
   }
 
   /**
@@ -142,7 +132,7 @@ export class IPService {
     ipId: string,
     newLiquidity: number,
     newCirculatingSupply?: number,
-    newBurnedSupply?: number
+    newBurnedSupply?: number,
   ): Promise<void> {
     const ip = await this.getIPById(ipId);
     if (!ip) throw new Error("IP not found");
@@ -159,7 +149,8 @@ export class IPService {
         current_liquidity: newLiquidity,
         current_price: currentPrice,
         market_cap: marketCap,
-        circulating_supply: newCirculatingSupply !== undefined ? newCirculatingSupply : ip.circulating_supply,
+        circulating_supply:
+          newCirculatingSupply !== undefined ? newCirculatingSupply : ip.circulating_supply,
         burned_supply: newBurnedSupply !== undefined ? newBurnedSupply : ip.burned_supply,
         updated_at: new Date(),
       })
@@ -193,7 +184,7 @@ export class IPService {
 
     const percentage = this.calculateLiquidityPercentage(
       ip.current_liquidity,
-      ip.initial_liquidity
+      ip.initial_liquidity,
     );
     return percentage >= 50;
   }
@@ -201,10 +192,7 @@ export class IPService {
   /**
    * Calculate liquidity percentage
    */
-  private calculateLiquidityPercentage(
-    currentLiquidity: number,
-    initialLiquidity: number
-  ): number {
+  private calculateLiquidityPercentage(currentLiquidity: number, initialLiquidity: number): number {
     if (initialLiquidity === 0) return 0;
     return (currentLiquidity / initialLiquidity) * 100;
   }
@@ -229,7 +217,7 @@ export class IPService {
     if (ip.status === "CREATED") {
       const liquidityPercentage = this.calculateLiquidityPercentage(
         ip.current_liquidity,
-        ip.initial_liquidity
+        ip.initial_liquidity,
       );
       if (liquidityPercentage >= 50) {
         await this.updateIPStatus(ipId, "LAUNCH_PHASE");

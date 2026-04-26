@@ -4,12 +4,14 @@
 
 import { Hono } from "hono";
 import { UserService } from "../services/user-service";
-import { authenticateRequest, requireAuth, optionalAuthenticate } from "../middleware/auth";
 import {
-  validateEmail,
-  validateUsername,
-  ValidationError,
-} from "../utils/validation";
+  authenticateRequest,
+  createAuthToken,
+  optionalAuthenticate,
+  requireAuth,
+  verifyWalletSignature,
+} from "../middleware/auth";
+import { validateEmail, validateUsername, validateWalletAddress } from "../utils/validation";
 import {
   createSuccessResponse,
   createHTTPResponse,
@@ -38,8 +40,17 @@ export function createUserRoutes(options: UserRoutesOptions): Hono {
         throw new AppError(
           ERROR_CODES.VALIDATION_ERROR,
           "walletAddress, signature, and message are required",
-          400
+          400,
         );
+      }
+
+      if (!validateWalletAddress(body.walletAddress)) {
+        throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Invalid wallet address", 400);
+      }
+
+      const isValid = await verifyWalletSignature(body.message, body.signature, body.walletAddress);
+      if (!isValid) {
+        throw new AppError(ERROR_CODES.UNAUTHORIZED, "Invalid signature", 401);
       }
 
       // Get or create user
@@ -49,18 +60,17 @@ export function createUserRoutes(options: UserRoutesOptions): Hono {
         email: body.email,
       });
 
-      // TODO: In production, verify signature before returning token
-      // const isValid = await verifyWalletSignature(
-      //   body.message,
-      //   body.signature,
-      //   body.walletAddress
-      // );
-      // if (!isValid) throw new AppError(...);
-
-      const response = createSuccessResponse({
-        user,
-        token: `${body.walletAddress}:${body.signature}:${body.message}`,
-      }, 200);
+      const response = createSuccessResponse(
+        {
+          user,
+          token: createAuthToken({
+            walletAddress: body.walletAddress,
+            signature: body.signature,
+            message: body.message,
+          }),
+        },
+        200,
+      );
       return createHTTPResponse(response);
     } catch (error) {
       const errorResponse = handleError(error);
@@ -93,11 +103,7 @@ export function createUserRoutes(options: UserRoutesOptions): Hono {
       const user = await userService.getUserById(userId);
 
       if (!user) {
-        throw new AppError(
-          ERROR_CODES.USER_NOT_FOUND,
-          "User not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.USER_NOT_FOUND, "User not found", 404);
       }
 
       // Hide sensitive info from non-owner requests
@@ -129,21 +135,13 @@ export function createUserRoutes(options: UserRoutesOptions): Hono {
       // Validate inputs
       if (body.username) {
         if (!validateUsername(body.username)) {
-          throw new AppError(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Invalid username format",
-            400
-          );
+          throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Invalid username format", 400);
         }
       }
 
       if (body.email) {
         if (!validateEmail(body.email)) {
-          throw new AppError(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Invalid email format",
-            400
-          );
+          throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Invalid email format", 400);
         }
       }
 
@@ -175,11 +173,7 @@ export function createUserRoutes(options: UserRoutesOptions): Hono {
       const body = await c.req.json();
 
       if (!body.amount || body.amount <= 0) {
-        throw new AppError(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Amount must be positive",
-          400
-        );
+        throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Amount must be positive", 400);
       }
 
       const amountInCents = Math.round(body.amount * 100);
@@ -205,11 +199,7 @@ export function createUserRoutes(options: UserRoutesOptions): Hono {
       const body = await c.req.json();
 
       if (!body.amount || body.amount <= 0) {
-        throw new AppError(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Amount must be positive",
-          400
-        );
+        throw new AppError(ERROR_CODES.VALIDATION_ERROR, "Amount must be positive", 400);
       }
 
       const amountInCents = Math.round(body.amount * 100);

@@ -11,13 +11,16 @@ The **IP Token Simulation** is an interactive tool that demonstrates the complet
 ## Getting Started
 
 ### Step 1: Initialize IP
+
 Click **"Create New IP"** to create a test IP with:
+
 - Creator: `creator_alice`
 - Title: `AI Art NFT Collection`
 - Initial Liquidity: `$10,000`
 - Launch Duration: `30 days`
 
 **What happens:**
+
 1. 30% creator forfeit is applied: `$10,000 × 0.70 = $7,000` liquidity pool
 2. Creator receives 7,000 tokens (at $1 initial price)
 3. IP transitions to `LAUNCH_PHASE` (since liquidity ≥ 50%)
@@ -27,13 +30,16 @@ Click **"Create New IP"** to create a test IP with:
 ## Dashboard Sections
 
 ### KPI Metrics (Top Row)
+
 - **Current Price:** Token value calculated as `Liquidity / Circulating Supply`
 - **Liquidity:** Available pool balance (increases with 30% fees from sells)
 - **Market Cap:** Total value of all tokens
 - **Circulating Supply:** Total tokens not burned
 
 ### Liquidity Status (Meter)
+
 Visual indicator showing:
+
 - **Green Zone:** > 50% (Healthy)
 - **Yellow Zone:** 5%-50% (Caution)
 - **Red Zone:** < 5% (Emergency - Burn mechanism active)
@@ -43,17 +49,20 @@ Visual indicator showing:
 ## Trading Tab
 
 ### Buy Action
+
 1. Enter an **Investor ID** (e.g., `investor_bob`)
 2. Enter **Amount in USD** (e.g., `$1,000`)
 3. Click **Execute Buy**
 
 **What happens:**
+
 - Tokens calculated: `$1,000 ÷ current_price`
 - NO fees charged on buy
 - New investor added to holders list
 - Investor's average buy price tracked
 
 **Example:**
+
 ```
 Price = $7,000 ÷ 7,000 = $1/token
 Investor buys $1,000
@@ -62,10 +71,12 @@ Investor buys $1,000
 ```
 
 ### Sell Action
+
 1. Enter **Tokens to Sell** (max: creator's balance)
 2. Click **Execute Sell**
 
 **What happens:**
+
 - Sale value calculated: `tokens × current_price`
 - 30% fee added to liquidity pool (auto-increases)
 - 70% proceeds sent to seller
@@ -74,6 +85,7 @@ Investor buys $1,000
 - ⚠️ Checked if liquidity dropped below 5%
 
 **Example:**
+
 ```
 Current state: 7,000 tokens, $7,000 liquidity, $1/token
 Creator sells 1,000 tokens
@@ -86,6 +98,7 @@ Creator sells 1,000 tokens
 ```
 
 ### Phase Control Buttons
+
 - **End Launch Phase:** Transition to `PUBLIC_TRADING` (enables buyback)
 - **Market Crash:** Simulates 30% sell pressure
 - **Market Recovery:** New $5k buy to boost liquidity
@@ -95,16 +108,20 @@ Creator sells 1,000 tokens
 ## Burn Mechanism Tab
 
 ### When It Activates
+
 Emergency burn is triggered automatically when:
+
 - **Liquidity drops to ≤ 5%** of initial amount
 - Example: Initial $10,000 → Alert when liquidity hits $500
 
 ### How to Claim
+
 1. Enter **Tokens to Burn** (from your active balance)
 2. See estimated liquidity share (calculated as `tokens ÷ total_supply × current_liquidity`)
 3. Click **Claim Burn Share**
 
 **What happens:**
+
 - Tokens are burned (removed from circulation)
 - Pro-rata share of remaining liquidity paid to holder
 - Burned tokens tracked separately
@@ -112,6 +129,7 @@ Emergency burn is triggered automatically when:
 - Price recalculates
 
 **Example:**
+
 ```
 Emergency triggered: $500 liquidity remaining
 You have: 1,000 tokens out of 7,000 total
@@ -124,7 +142,9 @@ Your share = (500 ÷ 7,000) × $500 = $35.71
 ```
 
 ### Emergency Resolution
+
 When liquidity recovers above 5% (through new buys or recovery events):
+
 - Burn mechanism automatically deactivates
 - Normal trading resumes
 - Unclaimed burn shares remain reserved
@@ -134,6 +154,7 @@ When liquidity recovers above 5% (through new buys or recovery events):
 ## Events Tab
 
 Shows complete transaction history:
+
 - **Type:** BUY, SELL, BURN_SHARE, CREATOR_FORFEIT
 - **Amount:** USD value transacted
 - **Price:** Token price at time of transaction
@@ -147,6 +168,7 @@ Useful for auditing and understanding price movements.
 ## Holders Tab
 
 Table showing all token holders:
+
 - **User:** Investor ID
 - **Active:** Tokens currently held
 - **Burned:** Tokens burned in emergency mechanism
@@ -161,6 +183,7 @@ Table showing all token holders:
 ### Scenario: Successful Launch → Crisis → Recovery
 
 **Phase 1: Creation**
+
 ```
 ✓ Create IP: $10,000 liquidity
   Status: LAUNCH_PHASE
@@ -169,6 +192,7 @@ Table showing all token holders:
 ```
 
 **Phase 2: Early Adoption**
+
 ```
 ✓ investor_bob buys $2,000
   Price now: $7,000 ÷ 8,000 = $0.875/token
@@ -177,6 +201,7 @@ Table showing all token holders:
 ```
 
 **Phase 3: Market Shift**
+
 ```
 ✓ Creator sells $2,000 of tokens
   → Fee: $600 to liquidity
@@ -186,6 +211,7 @@ Table showing all token holders:
 ```
 
 **Phase 4: Panic Sell (Crash)**
+
 ```
 ✓ Click "Market Crash (-30%)"
   → All holders sell 30% of positions
@@ -195,6 +221,7 @@ Table showing all token holders:
 ```
 
 **Phase 5: Emergency Triggered** ⚠️
+
 ```
 ✓ Liquidity hits $450 (4.5% threshold)
   → EMERGENCY BURN ACTIVATED
@@ -202,6 +229,7 @@ Table showing all token holders:
 ```
 
 **Phase 6: Holders React**
+
 ```
 ✓ investor_bob burns 500 tokens
   → Receives: (500 ÷ total) × $450
@@ -212,6 +240,7 @@ Table showing all token holders:
 ```
 
 **Phase 7: Recovery**
+
 ```
 ✓ New investor deposits $5,000
   → Large fee collected
@@ -257,7 +286,7 @@ A: Yes! Same inputs produce same outputs. State is fully traceable.
 ✓ Test extreme scenarios (large sells, rapid dumps)  
 ✓ Watch transaction history to trace state changes  
 ✓ Compare holder metrics before/after burns  
-✓ Try different burn percentages in emergency  
+✓ Try different burn percentages in emergency
 
 ---
 
@@ -271,13 +300,14 @@ A: Yes! Same inputs produce same outputs. State is fully traceable.
 ✅ Fee collection and distribution  
 ✅ State transitions and status changes  
 ✅ Multi-holder scenarios  
-✅ Emergency resolution  
+✅ Emergency resolution
 
 ---
 
 ## Next Steps
 
 After validating the simulation, this logic will be:
+
 1. Implemented as backend API endpoints (Node.js / Python / Go)
 2. Connected to database (PostgreSQL/MongoDB)
 3. Integrated with frontend components

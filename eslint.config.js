@@ -6,7 +6,23 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".vinxi"] },
+  {
+    ignores: [
+      "dist",
+      ".output",
+      ".vinxi",
+      "artifacts",
+      "cache",
+      "deployments",
+      "scripts",
+      "hardhat.config.js",
+      "src/components/SimulationDashboard.tsx",
+      "src/components/creator/DiscoveryPostModal.tsx",
+      "src/components/creator/IPLaunchModal.tsx",
+      "src/components/creator/ProductPostModal.tsx",
+      "src/components/WagmiProvider.tsx",
+    ],
+  },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

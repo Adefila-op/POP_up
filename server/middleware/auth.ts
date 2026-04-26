@@ -3,6 +3,7 @@
  * Handles wallet signature verification and user authentication
  */
 
+import { verifyMessage } from "ethers";
 import { AppError, ERROR_CODES } from "../utils/errors";
 import { UserService } from "../services/user-service";
 import type { User } from "../db/types";
@@ -17,37 +18,61 @@ export interface AuthRequest extends Request {
   auth?: AuthContext;
 }
 
+interface AuthTokenPayload {
+  walletAddress: string;
+  signature: string;
+  message: string;
+}
+
+function encodeTokenPayload(payload: AuthTokenPayload): string {
+  const json = JSON.stringify(payload);
+  return btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeTokenPayload(token: string): AuthTokenPayload {
+  const normalized = token.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  const decoded = atob(padded);
+  const payload = JSON.parse(decoded) as Partial<AuthTokenPayload>;
+
+  if (
+    typeof payload.walletAddress !== "string" ||
+    typeof payload.signature !== "string" ||
+    typeof payload.message !== "string"
+  ) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "Invalid token payload", 401);
+  }
+
+  return payload as AuthTokenPayload;
+}
+
+export function createAuthToken(payload: AuthTokenPayload): string {
+  return encodeTokenPayload(payload);
+}
+
 /**
- * Extract bearer token from authorization header
+ * Extract bearer token payload from authorization header
  */
-export function extractToken(request: Request): string | null {
+export function extractToken(request: Request): AuthTokenPayload | null {
   const authHeader = request.headers.get("authorization");
   if (!authHeader) return null;
 
   const parts = authHeader.split(" ");
   if (parts.length !== 2 || parts[0] !== "Bearer") return null;
 
-  return parts[1];
+  return decodeTokenPayload(parts[1]);
 }
 
 /**
- * Verify wallet signature (mock implementation)
- * In production, use ethers.js to verify EIP-191 signatures
+ * Verify wallet signature using EIP-191 signed message recovery
  */
 export async function verifyWalletSignature(
   message: string,
   signature: string,
-  walletAddress: string
+  walletAddress: string,
 ): Promise<boolean> {
-  // TODO: Implement real signature verification using ethers.js
-  // This is a placeholder that should be replaced with:
-  // import { verifyMessage } from "ethers";
-  // return verifyMessage(message, signature) === walletAddress;
-
-  console.warn(
-    "Using mock signature verification. Implement real verification in production."
-  );
-  return walletAddress.toLowerCase().startsWith("0x");
+  const recoveredAddress = verifyMessage(message, signature);
+  return recoveredAddress.toLowerCase() === walletAddress.toLowerCase();
 }
 
 /**
@@ -74,11 +99,7 @@ export function parseAuthMessage(message: string): {
     // Check if message is not older than 5 minutes
     const messageAge = Date.now() - timestamp;
     if (messageAge > 5 * 60 * 1000) {
-      throw new AppError(
-        ERROR_CODES.UNAUTHORIZED,
-        "Message signature expired",
-        401
-      );
+      throw new AppError(ERROR_CODES.UNAUTHORIZED, "Message signature expired", 401);
     }
 
     return { timestamp, nonce };
@@ -92,49 +113,26 @@ export function parseAuthMessage(message: string): {
  */
 export async function authenticateRequest(
   request: Request,
-  userService: UserService
+  userService: UserService,
 ): Promise<AuthContext> {
-  const token = extractToken(request);
-  if (!token) {
-    throw new AppError(
-      ERROR_CODES.UNAUTHORIZED,
-      "Missing authorization token",
-      401
-    );
+  const tokenPayload = extractToken(request);
+  if (!tokenPayload) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "Missing authorization token", 401);
   }
 
   try {
-    // Parse JWT or signed message
-    // For now, using signed message format: {walletAddress}:{signature}:{message}
-    const parts = token.split(":");
-    if (parts.length !== 3) {
-      throw new AppError(
-        ERROR_CODES.UNAUTHORIZED,
-        "Invalid token format",
-        401
-      );
-    }
-
-    const [walletAddress, signature, message] = parts;
+    const { walletAddress, signature, message } = tokenPayload;
 
     // Verify signature
     const isValid = await verifyWalletSignature(message, signature, walletAddress);
     if (!isValid) {
-      throw new AppError(
-        ERROR_CODES.UNAUTHORIZED,
-        "Invalid signature",
-        401
-      );
+      throw new AppError(ERROR_CODES.UNAUTHORIZED, "Invalid signature", 401);
     }
 
     // Parse message
     const parsed = parseAuthMessage(message);
     if (!parsed) {
-      throw new AppError(
-        ERROR_CODES.UNAUTHORIZED,
-        "Invalid message format",
-        401
-      );
+      throw new AppError(ERROR_CODES.UNAUTHORIZED, "Invalid message format", 401);
     }
 
     // Get or create user
@@ -151,11 +149,7 @@ export async function authenticateRequest(
   } catch (error) {
     if (error instanceof AppError) throw error;
 
-    throw new AppError(
-      ERROR_CODES.UNAUTHORIZED,
-      "Authentication failed",
-      401
-    );
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "Authentication failed", 401);
   }
 }
 
@@ -164,7 +158,7 @@ export async function authenticateRequest(
  */
 export async function optionalAuthenticate(
   request: Request,
-  userService: UserService
+  userService: UserService,
 ): Promise<AuthContext | null> {
   try {
     return await authenticateRequest(request, userService);
@@ -192,11 +186,7 @@ export function createAuthMiddleware(userService: UserService) {
  */
 export function requireAuth(auth: AuthContext | undefined): AuthContext {
   if (!auth?.isAuthenticated) {
-    throw new AppError(
-      ERROR_CODES.UNAUTHORIZED,
-      "Authentication required",
-      401
-    );
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, "Authentication required", 401);
   }
   return auth;
 }

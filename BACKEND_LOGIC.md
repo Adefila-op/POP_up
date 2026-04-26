@@ -11,26 +11,26 @@ interface IP {
   title: string
   description: string
   category: string
-  
+
   // Liquidity & Finance
   initial_liquidity: number (decimal, locked amount)
   current_liquidity: number (running balance from fees)
   market_cap: number (total value of all tokens sold)
   total_supply: number (total tokens created)
-  
+
   // Pricing
   current_price: number (calculated: current_liquidity / total_supply)
   floor_price: number (locked during LAUNCH_PHASE)
-  
+
   // Status & Timeline
   status: IPStatus (CREATED | LAUNCH_PHASE | PUBLIC_TRADING | MATURE)
   launch_start_date: timestamp
   launch_end_date: timestamp
-  
+
   // Tokens
   circulating_supply: number (total - burned)
   burned_supply: number (tokens removed via burn mechanism)
-  
+
   // Metadata
   created_at: timestamp
   updated_at: timestamp
@@ -51,17 +51,17 @@ interface TokenHolder {
   id: string (UUID)
   ip_id: string (FK to IP)
   user_id: string (FK to User)
-  
+
   active_balance: number (tokens currently held)
   burned_balance: number (tokens burned in liquidity events)
   liquidity_claimed: number (value received from burns)
-  
+
   average_buy_price: number
   total_invested: number
-  
+
   created_at: timestamp
   updated_at: timestamp
-  
+
   // Unique constraint: (ip_id, user_id)
 }
 ```
@@ -72,22 +72,22 @@ interface TokenHolder {
 interface Transaction {
   id: string (UUID)
   ip_id: string (FK to IP)
-  
+
   type: TransactionType
   status: TransactionStatus (PENDING | COMPLETED | FAILED)
-  
+
   // For BUY/SELL
   buyer_id: string
   seller_id: string
   amount_tokens: number (quantity of tokens)
   amount_value: number (USD value)
-  
+
   // Fee calculation
   fee_to_liquidity: number (30% of amount_value on sales)
   seller_proceeds: number (70% of amount_value)
-  
+
   price_per_token: number (amount_value / amount_tokens)
-  
+
   // Metadata
   created_at: timestamp
   completed_at: timestamp
@@ -114,20 +114,20 @@ enum TransactionStatus {
 interface LiquidityEvent {
   id: string (UUID)
   ip_id: string (FK to IP)
-  
+
   event_type: LiquidityEventType
   triggered_by: string (user_id or SYSTEM)
-  
+
   // Event details
   liquidity_before: number
   liquidity_after: number
   liquidity_percentage: number (liquidity_after / initial_liquidity * 100)
-  
+
   // For BURN_TRIGGERED events
   holders_affected: number (count of affected holders)
   total_tokens_burned: number
   total_liquidity_distributed: number
-  
+
   created_at: timestamp
   completed_at: timestamp
 }
@@ -197,7 +197,7 @@ On IP Creation (30% initial forfeit):
   Creator Initial Liquidity = L
   Creator Keeps = L × 0.70 (70% in liquidity)
   Platform Receives = L × 0.30 (30% added to pool immediately)
-  
+
   Actual Initial Liquidity = L × 0.70
 ```
 
@@ -206,17 +206,17 @@ On IP Creation (30% initial forfeit):
 ```
 Initial Token Generation (on creation):
   total_supply = (creator_initial_investment) / (desired_initial_price)
-  
+
   After 30% forfeit:
   effective_liquidity = creator_initial_investment × 0.70
   effective_supply = total_supply
 
 Price Calculation:
-  
+
   LAUNCH_PHASE:
     current_price = initial_liquidity_after_forfeit / total_supply
     (fixed, no changes)
-  
+
   PUBLIC_TRADING:
     current_price = current_liquidity / circulating_supply
     (dynamic, changes with each transaction)
@@ -334,13 +334,13 @@ Claim Mechanism:
      ├─ tokens_to_burn > 0
      ├─ IP still in BURN state
      └─ BURN_TRIGGERED event not expired
-  
+
   4. Claim Share
      ├─ share_percentage = tokens_to_burn / IP.total_supply
      ├─ liquidity_share = IP.current_liquidity × share_percentage
      ├─ holder.liquidity_claimed += liquidity_share
      └─ holder receives liquidity_share in USD/stablecoin
-  
+
   5. Update State
      ├─ holder.active_balance -= tokens_to_burn
      ├─ holder.burned_balance += tokens_to_burn
@@ -405,12 +405,12 @@ Note:
 ```
 During Burn Mechanism:
   holder_share = (tokens_burned / total_supply) × current_liquidity
-  
+
   Example:
     total_supply = 1,000,000
     holder burns = 10,000 (1%)
     current_liquidity = $1,000,000
-    
+
     holder_share = (10,000 / 1,000,000) × $1,000,000 = $10,000
 ```
 
@@ -668,120 +668,120 @@ Race Condition Prevention:
 STEP 1: Creator Creates IP
   creator_id = alice
   initial_liquidity = $10,000
-  
+
   System applies 30% forfeit:
   liquidity_pool_initial = $10,000 × 0.70 = $7,000
-  
+
   Create IP:
     total_supply = $7,000 / $1 = 7,000 tokens
     current_price = $7,000 / 7,000 = $1/token
     status = LAUNCH_PHASE
-    
+
   Result: alice has $3,000 remaining, platform has $7,000 in liquidity
 
 ---
 
 STEP 2: Buyer Purchases
   bob buys $500 worth
-  
+
   Calculation:
     tokens_to_receive = $500 / $1 = 500 tokens
     NO FEES on buy
     bob.active_balance += 500
     circulating_supply = 7,500 (7,000 + 500 new)
-  
+
   Result: bob holds 500 tokens, liquidity still $7,000
 
 ---
 
 STEP 3: Bob Sells
   bob sells 500 tokens
-  
+
   Calculation:
     current_price = $7,000 / 7,500 = $0.933/token
     sale_value = 500 × $0.933 = $466.50
     fee_to_liquidity = $466.50 × 0.30 = $139.95
     bob_proceeds = $466.50 × 0.70 = $326.55
-    
+
   Update:
     bob.active_balance -= 500
     circulating_supply = 7,000
     current_liquidity = $7,000 + $139.95 = $7,139.95
     current_price = $7,139.95 / 7,000 = $1.020/token
-  
+
   Result: Liquidity increased from fee, price slightly recovered
 
 ---
 
 STEP 4: Large Sell Triggers Emergency (5% Threshold)
   carol sells 6,500 tokens (most of supply)
-  
+
   current_price = $7,139.95 / 7,000 = $1.020
   sale_value = 6,500 × $1.020 = $6,630
   fee_to_liquidity = $6,630 × 0.30 = $1,989
   carol_proceeds = $6,630 × 0.70 = $4,641
-  
+
   After:
     current_liquidity = $7,139.95 + $1,989 = $9,128.95
     circulating_supply = 500
     current_price = $9,128.95 / 500 = $18.26/token
-  
+
   ⚠️ Wait, liquidity increased so no burn?
-  
+
   Let me recalculate with more sells:
-  
+
   Multiple sellers drain to:
     current_liquidity = $450 (dropped from $7,000)
     liquidity_pct = $450 / $7,000 = 6.43%
-    
+
   Still above 5%. One more sell:
     sale_value = $100
     fee = $30
     current_liquidity = $450 + $30 = $480
-    
+
     Re-calculate: liquidity_pct = $480 / $7,000 = 6.86%
-  
+
   Market selling doesn't trigger emergency in this path. Let me use extreme case:
-  
+
   Extreme: Someone bought at $1, market crashed, sells at $0.001
   sale_value = 7,000 × $0.001 = $7
   fee = $2.10
   current_liquidity = $7,000 + $2.10 = $7,002.10
-  
+
   Still increases. Emergency only triggers if liquidity extracted faster than fees accumulate.
-  
+
   Actual Emergency Scenario:
     Suppose circulating_supply is 70,000,000 tokens (typical meme token)
     current_price = $0.0001/token
     current_liquidity = $7,000
     market_cap = $7,000
-    
+
     Carol sells 50,000,000 tokens at $0.0001:
       sale_value = $5,000
       fee = $1,500
       current_liquidity = $8,500
-    
+
     But now supply is 20,000,000, price drops:
       new_price = $8,500 / 20,000,000 = $0.000425
-    
+
     If further dumps happen:
       current_liquidity drops to $400
       liquidity_pct = $400 / $7,000 = 5.71% (still above)
-  
+
   Liquidity trigger requires EXTRACTION: only happens in buyback or burn claims.
-  
+
   Correct Scenario: Frequent Buybacks drain liquidity
     Bob buyback request: 10,000 tokens × $1 = $10,000
     But current_liquidity = $8,000
     REJECTED: insufficient liquidity
-    
+
     Bob buyback: 7,000 tokens × $1.14 = $8,000 (remaining liquidity)
     current_liquidity = $0 (or near-zero)
     liquidity_pct = 0% (EMERGENCY)
-  
+
   ✓ BURN_TRIGGERED event created
   ✓ Holders notified: "Only 0% liquidity remaining. Burn tokens to claim share."
-  
+
   Holder D has 500 tokens:
     Chooses to burn all 500
     holder_share = (500 / 20,000,000) × $0 = $0
@@ -794,7 +794,7 @@ STEP 5: Recovery or Resolution
     ├─ BURN state persists
     ├─ Remaining holders must decide to burn or hold
     └─ Project fails unless recovered
-  
+
   Case B: Creator/supporters add funds → Liquidity recovers
     ├─ New buy: $5,000 added
     ├─ current_liquidity = $5,000
@@ -814,26 +814,26 @@ CREATE TABLE ip (
   title VARCHAR(255) NOT NULL,
   description TEXT,
   category VARCHAR(100),
-  
+
   initial_liquidity DECIMAL(18, 8) NOT NULL,
   current_liquidity DECIMAL(18, 8) NOT NULL DEFAULT 0,
   market_cap DECIMAL(18, 8) NOT NULL DEFAULT 0,
-  
+
   total_supply DECIMAL(18, 8) NOT NULL,
   circulating_supply DECIMAL(18, 8) NOT NULL,
   burned_supply DECIMAL(18, 8) NOT NULL DEFAULT 0,
-  
+
   current_price DECIMAL(18, 10) GENERATED ALWAYS AS (current_liquidity / NULLIF(circulating_supply, 0)),
   floor_price DECIMAL(18, 10),
-  
+
   status VARCHAR(50) NOT NULL CHECK (status IN ('CREATED', 'LAUNCH_PHASE', 'PUBLIC_TRADING', 'MATURE')),
-  
+
   launch_start_date TIMESTAMP,
   launch_end_date TIMESTAMP,
-  
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
+
   FOREIGN KEY (creator_id) REFERENCES users(id),
   INDEX idx_creator_id (creator_id),
   INDEX idx_status (status)
@@ -843,17 +843,17 @@ CREATE TABLE token_holder (
   id UUID PRIMARY KEY,
   ip_id UUID NOT NULL,
   user_id UUID NOT NULL,
-  
+
   active_balance DECIMAL(18, 8) NOT NULL DEFAULT 0,
   burned_balance DECIMAL(18, 8) NOT NULL DEFAULT 0,
   liquidity_claimed DECIMAL(18, 8) NOT NULL DEFAULT 0,
-  
+
   average_buy_price DECIMAL(18, 10),
   total_invested DECIMAL(18, 8),
-  
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  
+
   FOREIGN KEY (ip_id) REFERENCES ip(id) ON DELETE CASCADE,
   FOREIGN KEY (user_id) REFERENCES users(id),
   UNIQUE KEY unique_holder (ip_id, user_id),
@@ -863,23 +863,23 @@ CREATE TABLE token_holder (
 CREATE TABLE transaction (
   id UUID PRIMARY KEY,
   ip_id UUID NOT NULL,
-  
+
   type VARCHAR(50) NOT NULL CHECK (type IN ('BUY', 'SELL', 'BURN_SHARE', 'CREATOR_FORFEIT')),
   status VARCHAR(50) NOT NULL CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'CANCELLED')),
-  
+
   buyer_id UUID,
   seller_id UUID,
-  
+
   amount_tokens DECIMAL(18, 8) NOT NULL,
   amount_value DECIMAL(18, 8) NOT NULL,
-  
+
   fee_to_liquidity DECIMAL(18, 8),
   seller_proceeds DECIMAL(18, 8),
   price_per_token DECIMAL(18, 10),
-  
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   completed_at TIMESTAMP,
-  
+
   FOREIGN KEY (ip_id) REFERENCES ip(id) ON DELETE CASCADE,
   FOREIGN KEY (buyer_id) REFERENCES users(id),
   FOREIGN KEY (seller_id) REFERENCES users(id),
@@ -890,21 +890,21 @@ CREATE TABLE transaction (
 CREATE TABLE liquidity_event (
   id UUID PRIMARY KEY,
   ip_id UUID NOT NULL,
-  
+
   event_type VARCHAR(50) NOT NULL CHECK (event_type IN ('FEE_COLLECTED', 'BURN_TRIGGERED', 'HOLDER_BURNED')),
   triggered_by UUID,
-  
+
   liquidity_before DECIMAL(18, 8),
   liquidity_after DECIMAL(18, 8),
   liquidity_percentage DECIMAL(5, 2),
-  
+
   holders_affected INT,
   total_tokens_burned DECIMAL(18, 8),
   total_liquidity_distributed DECIMAL(18, 8),
-  
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   completed_at TIMESTAMP,
-  
+
   FOREIGN KEY (ip_id) REFERENCES ip(id) ON DELETE CASCADE,
   FOREIGN KEY (triggered_by) REFERENCES users(id),
   INDEX idx_ip_id (ip_id),
@@ -917,6 +917,7 @@ CREATE TABLE liquidity_event (
 ## 11. SUMMARY
 
 This backend logic provides:
+
 - ✓ Fair token pricing based on liquidity
 - ✓ Creator protection (30% forfeit upfront)
 - ✓ Buyer protection (liquidity-backed buyback)

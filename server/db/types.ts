@@ -4,16 +4,8 @@
  */
 
 export type IPStatus = "CREATED" | "LAUNCH_PHASE" | "PUBLIC_TRADING" | "MATURE";
-export type TransactionType =
-  | "BUY"
-  | "SELL"
-  | "BURN_SHARE"
-  | "CREATOR_FORFEIT";
-export type TransactionStatus =
-  | "PENDING"
-  | "COMPLETED"
-  | "FAILED"
-  | "CANCELLED";
+export type TransactionType = "BUY" | "SELL" | "BURN_SHARE" | "CREATOR_FORFEIT";
+export type TransactionStatus = "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED";
 export type LiquidityEventType =
   | "FEE_COLLECTED"
   | "BURN_TRIGGERED"

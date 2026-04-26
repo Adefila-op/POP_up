@@ -8,10 +8,7 @@ import { TransactionService } from "../services/transaction-service";
 import { LiquidityService } from "../services/liquidity-service";
 import { UserService } from "../services/user-service";
 import { authenticateRequest, requireAuth } from "../middleware/auth";
-import {
-  validateBuyTransactionInput,
-  validateSellTransactionInput,
-} from "../utils/validation";
+import { validateBuyTransactionInput, validateSellTransactionInput } from "../utils/validation";
 import {
   createSuccessResponse,
   createHTTPResponse,
@@ -27,16 +24,9 @@ export interface TransactionRoutesOptions {
   userService: UserService;
 }
 
-export function createTransactionRoutes(
-  options: TransactionRoutesOptions
-): Hono {
+export function createTransactionRoutes(options: TransactionRoutesOptions): Hono {
   const router = new Hono();
-  const {
-    ipService,
-    transactionService,
-    liquidityService,
-    userService,
-  } = options;
+  const { ipService, transactionService, liquidityService, userService } = options;
 
   /**
    * POST /api/transactions/buy - Execute buy transaction
@@ -51,11 +41,7 @@ export function createTransactionRoutes(
 
       // Check user has sufficient cash balance
       if (auth.user.cash_balance < Math.round(body.amountUSD * 100)) {
-        throw new AppError(
-          ERROR_CODES.INSUFFICIENT_FUNDS,
-          "Insufficient cash balance",
-          400
-        );
+        throw new AppError(ERROR_CODES.INSUFFICIENT_FUNDS, "Insufficient cash balance", 400);
       }
 
       // Execute transaction
@@ -66,10 +52,7 @@ export function createTransactionRoutes(
       });
 
       // Deduct cash from buyer
-      await userService.withdrawCash(
-        auth.user.id,
-        Math.round(body.amountUSD * 100)
-      );
+      await userService.withdrawCash(auth.user.id, Math.round(body.amountUSD * 100));
 
       const response = createSuccessResponse(transaction, 201);
       return createHTTPResponse(response);
@@ -116,16 +99,10 @@ export function createTransactionRoutes(
   router.get("/api/transactions/:id", async (c) => {
     try {
       const transactionId = c.req.param("id");
-      const transaction = await transactionService.getTransactionById(
-        transactionId
-      );
+      const transaction = await transactionService.getTransactionById(transactionId);
 
       if (!transaction) {
-        throw new AppError(
-          ERROR_CODES.NOT_FOUND,
-          "Transaction not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.NOT_FOUND, "Transaction not found", 404);
       }
 
       const response = createSuccessResponse(transaction, 200);
@@ -146,11 +123,7 @@ export function createTransactionRoutes(
       // Verify user exists
       const user = await userService.getUserById(userId);
       if (!user) {
-        throw new AppError(
-          ERROR_CODES.USER_NOT_FOUND,
-          "User not found",
-          404
-        );
+        throw new AppError(ERROR_CODES.USER_NOT_FOUND, "User not found", 404);
       }
 
       const transactions = await transactionService.getUserTransactions(userId);
@@ -173,17 +146,13 @@ export function createTransactionRoutes(
       const body = await c.req.json();
 
       if (!body.ipId || !body.amountTokens) {
-        throw new AppError(
-          ERROR_CODES.VALIDATION_ERROR,
-          "ipId and amountTokens are required",
-          400
-        );
+        throw new AppError(ERROR_CODES.VALIDATION_ERROR, "ipId and amountTokens are required", 400);
       }
 
       const burnClaim = await liquidityService.claimBurnShare(
         body.ipId,
         auth.user.id,
-        body.amountTokens
+        body.amountTokens,
       );
 
       // Add liquidity share to cash balance

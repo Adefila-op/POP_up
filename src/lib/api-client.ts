@@ -21,13 +21,16 @@ export interface IP {
   creator_id: string;
   title: string;
   description?: string;
-  category?: string;
+  category: string;
   cover_image_url?: string;
   status: "CREATED" | "LAUNCH_PHASE" | "PUBLIC_TRADING" | "MATURE";
   current_price: number;
   floor_price: number;
-  total_tokens_minted: number;
-  liquidity_pool_usd: number;
+  total_supply: number;
+  current_liquidity: number;
+  circulating_supply: number;
+  burned_supply: number;
+  initial_liquidity: number;
   created_at: string;
   updated_at: string;
 }
@@ -41,9 +44,10 @@ export interface Transaction {
   seller_id?: string;
   amount_tokens: number;
   price_per_token: number;
-  total_price_usd: number;
+  amount_value: number;
+  seller_proceeds: number;
   created_at: string;
-  updated_at: string;
+  completed_at?: string;
 }
 
 export interface TokenHolder {
@@ -55,22 +59,31 @@ export interface TokenHolder {
   average_buy_price: number;
 }
 
+type ApiRequestBody = Record<string, unknown>;
+
+export interface BurnClaim {
+  id: string;
+  ip_id: string;
+  user_id: string;
+  liquidity_event_id: string;
+  tokens_burned: number;
+  liquidity_share: number;
+  claim_status: "PENDING" | "COMPLETED" | "CLAIMED";
+  created_at: string;
+  updated_at: string;
+}
+
 // Get API base URL from environment or use default
 const API_BASE =
   import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" &&
-  window.location.hostname === "localhost"
+  (typeof window !== "undefined" && window.location.hostname === "localhost"
     ? "http://localhost:3000"
     : "https://popup-production.up.railway.app");
 
 /**
  * Generic API call wrapper
  */
-async function apiCall<T>(
-  endpoint: string,
-  method = "GET",
-  body?: any
-): Promise<T> {
+async function apiCall<T>(endpoint: string, method = "GET", body?: ApiRequestBody): Promise<T> {
   const token = localStorage.getItem("auth_token");
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -113,7 +126,7 @@ export const authAPI = {
   login: async (
     walletAddress: string,
     message: string,
-    signature: string
+    signature: string,
   ): Promise<{ user: User; token: string }> => {
     return apiCall("/api/auth/login", "POST", {
       walletAddress,
@@ -200,7 +213,7 @@ export const ipAPI = {
    * Get IPs by creator
    */
   getByCreator: async (creatorId: string): Promise<IP[]> => {
-    return apiCall(`/api/ips?creatorId=${creatorId}`, "GET");
+    return apiCall(`/api/creators/${creatorId}/ips`, "GET");
   },
 
   /**
@@ -215,16 +228,6 @@ export const ipAPI = {
    */
   getTransactions: async (ipId: string): Promise<Transaction[]> => {
     return apiCall(`/api/ips/${ipId}/transactions`, "GET");
-  },
-
-  /**
-   * Update IP status
-   */
-  updateStatus: async (
-    ipId: string,
-    status: "CREATED" | "LAUNCH_PHASE" | "PUBLIC_TRADING" | "MATURE"
-  ): Promise<IP> => {
-    return apiCall(`/api/ips/${ipId}`, "PUT", { status });
   },
 };
 
@@ -269,10 +272,7 @@ export const transactionAPI = {
   /**
    * Claim burn share
    */
-  claimBurnShare: async (
-    ipId: string,
-    amountTokens: number
-  ): Promise<any> => {
+  claimBurnShare: async (ipId: string, amountTokens: number): Promise<BurnClaim> => {
     return apiCall("/api/transactions/burn-claim", "POST", {
       ipId,
       amountTokens,

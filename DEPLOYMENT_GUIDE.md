@@ -91,6 +91,7 @@ railway logs
 ## Result
 
 Your API will be accessible at something like:
+
 - `https://your-project.railway.app/api/ips`
 - `https://your-project.railway.app/api/health`
 
@@ -128,6 +129,7 @@ pm2 save
 ## For Now
 
 The simplest option is **Railway.app**:
+
 1. No credit card needed for free tier
 2. Auto-deploys from GitHub
 3. Includes PostgreSQL

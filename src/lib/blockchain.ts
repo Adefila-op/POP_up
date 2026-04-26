@@ -18,7 +18,7 @@ export interface BlockchainConfig {
 const getNetworkConfig = (): Record<string, BlockchainConfig> => {
   const creatorRegistry = import.meta.env.VITE_CREATOR_REGISTRY_ADDRESS || "";
   const ipMarketplace = import.meta.env.VITE_IP_MARKETPLACE_ADDRESS || "";
-  
+
   return {
     baseSepolia: {
       network: "baseSepolia",
@@ -46,27 +46,36 @@ const getNetworkConfig = (): Record<string, BlockchainConfig> => {
 
 export const NETWORKS = getNetworkConfig();
 
+interface EthereumProvider {
+  isMetaMask?: boolean;
+  isZerion?: boolean;
+  isCoinbaseWallet?: boolean;
+  isWalletConnect?: boolean;
+  isFramework?: boolean;
+  request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+}
+
 /**
  * Detect available Web3 wallets
  */
 export function getAvailableWallets(): string[] {
   const wallets: string[] = [];
-  
+
   if (window.ethereum) {
     // Detect wallet provider name
-    if ((window as any).ethereum.isMetaMask) {
+    if (window.ethereum.isMetaMask) {
       wallets.push("MetaMask");
     }
-    if ((window as any).ethereum.isZerion) {
+    if (window.ethereum.isZerion) {
       wallets.push("Zerion");
     }
-    if ((window as any).ethereum.isCoinbaseWallet) {
+    if (window.ethereum.isCoinbaseWallet) {
       wallets.push("Coinbase Wallet");
     }
-    if ((window as any).ethereum.isWalletConnect) {
+    if (window.ethereum.isWalletConnect) {
       wallets.push("WalletConnect");
     }
-    if ((window as any).ethereum.isFramework) {
+    if (window.ethereum.isFramework) {
       wallets.push("Frame");
     }
     // Generic provider detected
@@ -74,7 +83,7 @@ export function getAvailableWallets(): string[] {
       wallets.push("Web3 Wallet");
     }
   }
-  
+
   return wallets;
 }
 
@@ -88,7 +97,9 @@ export function isWalletInstalled(): boolean {
 /**
  * Get Web3 provider (MetaMask or fallback to RPC)
  */
-export function getProvider(network: string = "baseSepolia"): ethers.BrowserProvider | ethers.JsonRpcProvider {
+export function getProvider(
+  network: string = "baseSepolia",
+): ethers.BrowserProvider | ethers.JsonRpcProvider {
   if (window.ethereum) {
     return new ethers.BrowserProvider(window.ethereum);
   }
@@ -102,7 +113,7 @@ export function getProvider(network: string = "baseSepolia"): ethers.BrowserProv
 export async function getSigner(): Promise<ethers.JsonRpcSigner> {
   if (!window.ethereum) {
     throw new Error(
-      "No Web3 wallet detected. Please install MetaMask, Zerion, Coinbase Wallet, or another EIP-1193 compatible wallet."
+      "No Web3 wallet detected. Please install MetaMask, Zerion, Coinbase Wallet, or another EIP-1193 compatible wallet.",
     );
   }
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -118,10 +129,10 @@ export async function connectWallet(): Promise<string> {
       "MetaMask: https://metamask.io",
       "Zerion: https://zerion.io",
       "Coinbase Wallet: https://www.coinbase.com/wallet",
-      "WalletConnect: https://walletconnect.com"
+      "WalletConnect: https://walletconnect.com",
     ];
     throw new Error(
-      `No Web3 wallet detected. Please install one of these:\n${walletLinks.join("\n")}`
+      `No Web3 wallet detected. Please install one of these:\n${walletLinks.join("\n")}`,
     );
   }
 
@@ -138,7 +149,10 @@ export async function connectWallet(): Promise<string> {
 /**
  * Get user's balance on selected network
  */
-export async function getBalance(address: string, network: string = "baseSepolia"): Promise<string> {
+export async function getBalance(
+  address: string,
+  network: string = "baseSepolia",
+): Promise<string> {
   const provider = getProvider(network);
   const balance = await provider.getBalance(address);
   return ethers.formatEther(balance);
@@ -151,7 +165,7 @@ export async function mintCreatorNFT(
   creatorAddress: string,
   username: string,
   bio: string,
-  profileImageURI: string
+  profileImageURI: string,
 ): Promise<string> {
   try {
     const signer = await getSigner();
@@ -161,7 +175,7 @@ export async function mintCreatorNFT(
     const creatorRegistry = new ethers.Contract(
       config.creatorRegistryAddress,
       ["function mintCreator(address,string,string,string) external returns (uint256)"],
-      signer
+      signer,
     );
 
     const tx = await creatorRegistry.mintCreator(creatorAddress, username, bio, profileImageURI);
@@ -186,10 +200,13 @@ export async function buyIPTokens(ipTokenAddress: string, usdAmount: number): Pr
     const ipMarketplace = new ethers.Contract(
       config.ipMarketplaceAddress,
       ["function buyTokens(address,uint256) external nonReentrant returns (uint256)"],
-      signer
+      signer,
     );
 
-    const tx = await ipMarketplace.buyTokens(ipTokenAddress, ethers.parseEther(usdAmount.toString()));
+    const tx = await ipMarketplace.buyTokens(
+      ipTokenAddress,
+      ethers.parseEther(usdAmount.toString()),
+    );
     const receipt = await tx.wait();
 
     // Record on-chain transaction
@@ -212,10 +229,13 @@ export async function sellIPTokens(ipTokenAddress: string, tokenAmount: number):
     const ipMarketplace = new ethers.Contract(
       config.ipMarketplaceAddress,
       ["function sellTokens(address,uint256) external nonReentrant returns (uint256)"],
-      signer
+      signer,
     );
 
-    const tx = await ipMarketplace.sellTokens(ipTokenAddress, ethers.parseEther(tokenAmount.toString()));
+    const tx = await ipMarketplace.sellTokens(
+      ipTokenAddress,
+      ethers.parseEther(tokenAmount.toString()),
+    );
     const receipt = await tx.wait();
 
     // Record on-chain transaction
@@ -230,7 +250,7 @@ export async function sellIPTokens(ipTokenAddress: string, tokenAmount: number):
 /**
  * Get user's on-chain transaction history
  */
-export async function getUserTransactionHistory(userAddress: string): Promise<any[]> {
+export async function getUserTransactionHistory(userAddress: string): Promise<unknown[]> {
   try {
     const provider = getProvider("baseSepolia");
     const config = NETWORKS["baseSepolia"];
@@ -238,7 +258,7 @@ export async function getUserTransactionHistory(userAddress: string): Promise<an
     const ipMarketplace = new ethers.Contract(
       config.ipMarketplaceAddress,
       ["function getUserTransactions(address) external view returns (tuple[])"],
-      provider
+      provider,
     );
 
     const transactions = await ipMarketplace.getUserTransactions(userAddress);
@@ -255,7 +275,7 @@ export async function getUserTransactionHistory(userAddress: string): Promise<an
 export async function switchNetwork(chainId: number): Promise<void> {
   if (!window.ethereum) {
     throw new Error(
-      "No Web3 wallet detected. Please install MetaMask, Zerion, Coinbase Wallet, or another EIP-1193 compatible wallet."
+      "No Web3 wallet detected. Please install MetaMask, Zerion, Coinbase Wallet, or another EIP-1193 compatible wallet.",
     );
   }
 
@@ -264,8 +284,8 @@ export async function switchNetwork(chainId: number): Promise<void> {
       method: "wallet_switchEthereumChain",
       params: [{ chainId: `0x${chainId.toString(16)}` }],
     });
-  } catch (error: any) {
-    if (error.code === 4902) {
+  } catch (error: unknown) {
+    if (typeof error === "object" && error !== null && "code" in error && error.code === 4902) {
       // Network not added, need to add it first
       console.log("Network not in wallet, would need to add it");
     } else {
@@ -277,7 +297,7 @@ export async function switchNetwork(chainId: number): Promise<void> {
 // Type augmentation for window object
 declare global {
   interface Window {
-    ethereum?: any;
+    ethereum?: EthereumProvider;
   }
 }
 

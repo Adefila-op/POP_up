@@ -5,9 +5,11 @@ This directory contains the Solidity smart contracts for on-chain IP tokenizatio
 ## Contracts Overview
 
 ### 1. **IPTokenization.sol** - ERC-20 Token
+
 Represents fractional ownership of a creator's intellectual property.
 
 **Key Features:**
+
 - ERC-20 standard token (burnable)
 - IP metadata storage (title, description, creator)
 - Automatic status transitions (CREATED → LAUNCH_PHASE → PUBLIC_TRADING → MATURE)
@@ -15,11 +17,13 @@ Represents fractional ownership of a creator's intellectual property.
 - Emergency burn mechanism for failing IPs
 
 **Status Timeline:**
+
 ```
 CREATED (0-1 day) → LAUNCH_PHASE (1-14 days) → PUBLIC_TRADING (14-44 days) → MATURE (44+ days)
 ```
 
 **Functions:**
+
 - `updateStatus()` - Update IP status based on elapsed time
 - `getPricePerToken()` - Calculate current token price
 - `addLiquidity(usdAmount)` - Add emergency liquidity
@@ -28,15 +32,18 @@ CREATED (0-1 day) → LAUNCH_PHASE (1-14 days) → PUBLIC_TRADING (14-44 days) �
 ---
 
 ### 2. **IPMarketplace.sol** - Automated Market Maker (AMM)
-Handles all trading of IP tokens using constant product formula (x*y=k).
+
+Handles all trading of IP tokens using constant product formula (x\*y=k).
 
 **Key Features:**
+
 - Create trading pools for each IP token
 - Buy/sell operations with 0.3% fee
 - On-chain transaction recording for full audit trail
 - Constant product formula: `(x + dx) × (y - dy) = x × y`
 
 **Trading Flow:**
+
 ```
 User sends USD → Marketplace calculates tokens owed
 Tokens = (USD * 0.997) * TokenReserve / (USDReserve + (USD * 0.997))
@@ -45,6 +52,7 @@ Transaction recorded on-chain permanently
 ```
 
 **Functions:**
+
 - `createPool(ipToken, creator, initialTokens, initialUSD)` - Initialize trading pool
 - `buyTokens(ipToken, usdAmount)` - Buy IP tokens
 - `sellTokens(ipToken, tokenAmount)` - Sell IP tokens
@@ -54,9 +62,11 @@ Transaction recorded on-chain permanently
 ---
 
 ### 3. **CreatorRegistry.sol** - ERC-721 NFT
+
 On-chain verification and profile storage for creators.
 
 **Key Features:**
+
 - ERC-721 NFT badge (minted once per creator)
 - Creator profile metadata (username, bio, profile image)
 - IP launch tracking
@@ -64,6 +74,7 @@ On-chain verification and profile storage for creators.
 - Username uniqueness enforcement
 
 **Creator Profile Struct:**
+
 ```solidity
 {
   walletAddress,     // Creator's wallet
@@ -77,6 +88,7 @@ On-chain verification and profile storage for creators.
 ```
 
 **Functions:**
+
 - `mintCreator(address, username, bio, profileImageURI)` - Register as creator
 - `updateProfile(address, newBio, newImage)` - Update profile
 - `recordIPLaunch(creatorAddress)` - Increment IP count
@@ -89,6 +101,7 @@ On-chain verification and profile storage for creators.
 ## Deployment
 
 ### Prerequisites
+
 ```bash
 # Install dependencies
 npm install
@@ -100,6 +113,7 @@ BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
 ```
 
 ### Deploy to Base/Sepolia
+
 ```bash
 # Compile contracts
 npx hardhat compile
@@ -115,7 +129,9 @@ npx hardhat run scripts/deploy.js --network base
 ```
 
 ### Save Deployment Info
+
 After deployment, update `.env.local`:
+
 ```
 VITE_CREATOR_REGISTRY_ADDRESS=0x...
 VITE_IP_MARKETPLACE_ADDRESS=0x...
@@ -127,6 +143,7 @@ VITE_BLOCKCHAIN_NETWORK=baseSepolia
 ## Integration with Frontend
 
 ### 1. Connect to Contracts
+
 ```typescript
 import blockchain from "@/lib/blockchain";
 
@@ -138,34 +155,38 @@ await blockchain.switchNetwork(84532);
 ```
 
 ### 2. Mint Creator NFT
+
 ```typescript
 const txHash = await blockchain.mintCreatorNFT(
   userAddress,
   "username",
   "My bio",
-  "https://ipfs.io/..."
+  "https://ipfs.io/...",
 );
 ```
 
 ### 3. Buy IP Tokens (On-Chain)
+
 ```typescript
 const txHash = await blockchain.buyIPTokens(
   ipTokenAddress,
-  100  // 100 USD worth
+  100, // 100 USD worth
 );
 // Transaction recorded on-chain automatically
 ```
 
 ### 4. Sell IP Tokens (On-Chain)
+
 ```typescript
 const txHash = await blockchain.sellIPTokens(
   ipTokenAddress,
-  50  // Sell 50 tokens
+  50, // Sell 50 tokens
 );
 // Transaction recorded on-chain automatically
 ```
 
 ### 5. View On-Chain Transaction History
+
 ```typescript
 const transactions = await blockchain.getUserTransactionHistory(userAddress);
 // Returns array of all buys/sells recorded on blockchain
@@ -190,12 +211,13 @@ struct Transaction {
 ```
 
 **View History:**
+
 ```typescript
 // Get all user's transactions from blockchain
 const txs = await blockchain.getUserTransactionHistory(userAddress);
 
-txs.forEach(tx => {
-  console.log(`${tx.isBuy ? 'BUY' : 'SELL'} ${tx.tokenAmount} tokens for $${tx.usdAmount}`);
+txs.forEach((tx) => {
+  console.log(`${tx.isBuy ? "BUY" : "SELL"} ${tx.tokenAmount} tokens for $${tx.usdAmount}`);
   console.log(`Fee: $${tx.feeAmount} | Timestamp: ${new Date(tx.timestamp * 1000)}`);
 });
 ```
@@ -204,13 +226,13 @@ txs.forEach(tx => {
 
 ## Gas Costs (Base/Sepolia)
 
-| Operation | Est. Gas | Cost (Base) |
-|-----------|----------|------------|
-| Mint Creator NFT | 150,000 | $0.01-0.05 |
-| Create Trading Pool | 200,000 | $0.01-0.08 |
-| Buy IP Tokens | 100,000 | $0.01-0.03 |
-| Sell IP Tokens | 100,000 | $0.01-0.03 |
-| Record Transaction | Included | Included |
+| Operation           | Est. Gas | Cost (Base) |
+| ------------------- | -------- | ----------- |
+| Mint Creator NFT    | 150,000  | $0.01-0.05  |
+| Create Trading Pool | 200,000  | $0.01-0.08  |
+| Buy IP Tokens       | 100,000  | $0.01-0.03  |
+| Sell IP Tokens      | 100,000  | $0.01-0.03  |
+| Record Transaction  | Included | Included    |
 
 ---
 
@@ -251,18 +273,21 @@ npx hardhat run scripts/deploy.js --network localhost
 ## Network Details
 
 ### Base Sepolia (Recommended for Testing)
+
 - **Chain ID:** 84532
 - **RPC:** https://sepolia.base.org
 - **Block Explorer:** https://sepolia.basescan.org
 - **Faucet:** https://faucet.circle.com
 
 ### Sepolia
+
 - **Chain ID:** 11155111
 - **RPC:** https://sepolia.infura.io
 - **Block Explorer:** https://sepolia.etherscan.io
 - **Faucet:** https://www.sepoliaether.com
 
 ### Base Mainnet
+
 - **Chain ID:** 8453
 - **RPC:** https://base.infura.io
 - **Block Explorer:** https://basescan.org
@@ -272,6 +297,7 @@ npx hardhat run scripts/deploy.js --network localhost
 ## Support
 
 For issues with smart contract deployment or integration:
+
 1. Check deployment logs in `deployments/` folder
 2. Verify contract addresses in `.env.local`
 3. Test on Base Sepolia testnet first

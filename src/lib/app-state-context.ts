@@ -63,8 +63,13 @@ export type AppStateContextValue = AppStateSnapshot & {
   toggleFollowCreator: (slug: string) => boolean;
   toggleSavedContent: (contentId: string) => boolean;
   toggleLikedContent: (contentId: string) => boolean;
-  buyIpListing: (listingId: string) => Promise<{ ok: boolean; reason?: string; qty?: number; price?: number }>;
-  createIpListing: (input: { ipId: string; qty: number; price: number }) => { ok: boolean; reason?: string };
+  buyIpListing: (
+    listingId: string,
+  ) => Promise<{ ok: boolean; reason?: string; qty?: number; price?: number }>;
+  createIpListing: (input: { ipId: string; qty: number; price: number }) => {
+    ok: boolean;
+    reason?: string;
+  };
   cancelIpListing: (listingId: string) => { ok: boolean };
   sellIpToPool: (input: {
     ipId: string;
