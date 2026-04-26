@@ -40,3 +40,5 @@ cache
 deployments
 scripts
 hardhat.config.js
+
+.env*.local

@@ -96,7 +96,7 @@ const API_BASE = (() => {
 })();
 
 /**
- * Generic API call wrapper
+ * Generic API call wrapper with timeout and error handling
  */
 async function apiCall<T>(endpoint: string, method = "GET", body?: ApiRequestBody): Promise<T> {
   const token = localStorage.getItem("auth_token");
@@ -112,19 +112,52 @@ async function apiCall<T>(endpoint: string, method = "GET", body?: ApiRequestBod
   console.log(`[API] ${method} ${url}`);
 
   try {
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    const data = await response.json();
+    try {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      throw new Error(data.error?.message || `HTTP ${response.status}`);
+      clearTimeout(timeoutId);
+
+      // Handle response based on content type
+      const contentType = response.headers.get("content-type");
+      let data: any;
+
+      if (contentType?.includes("application/json")) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        const errorMessage = 
+          data?.error?.message || 
+          data?.message || 
+          `HTTP ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      return data.data || data;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error instanceof TypeError && error.message === "Failed to fetch") {
+        throw new Error("Network error: Unable to connect to server. Check your connection and try again.");
+      }
+      
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw new Error("Request timeout: The server took too long to respond. Please try again.");
+      }
+
+      throw error;
     }
-
-    return data.data || data;
   } catch (error) {
     console.error(`[API Error] ${method} ${endpoint}:`, error);
     throw error;

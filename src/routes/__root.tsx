@@ -2,6 +2,7 @@ import { Outlet, Link, createRootRoute, HeadContent } from "@tanstack/react-rout
 import { Toaster } from "@/components/ui/sonner";
 import { AppStateProvider } from "@/lib/app-state";
 import { WagmiProviderComponent } from "@/components/WagmiProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 function NotFoundComponent() {
   return (
@@ -47,12 +48,14 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <WagmiProviderComponent>
-      <AppStateProvider>
-        <HeadContent />
-        <Outlet />
-        <Toaster position="top-center" />
-      </AppStateProvider>
-    </WagmiProviderComponent>
+    <ErrorBoundary>
+      <WagmiProviderComponent>
+        <AppStateProvider>
+          <HeadContent />
+          <Outlet />
+          <Toaster position="top-center" />
+        </AppStateProvider>
+      </WagmiProviderComponent>
+    </ErrorBoundary>
   );
 }

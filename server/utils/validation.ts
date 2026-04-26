@@ -1,5 +1,6 @@
 /**
  * Validation Utilities - Input validation and type checking
+ * Includes length limits to prevent abuse and data consistency issues
  */
 
 /**
@@ -15,12 +16,29 @@ export class ValidationError extends Error {
   }
 }
 
+// Maximum field lengths to prevent abuse
+export const MAX_LENGTHS = {
+  USERNAME: 50,
+  EMAIL: 100,
+  BIO: 500,
+  DESCRIPTION: 5000,
+  TITLE: 200,
+  CATEGORY: 100,
+  URL: 2000,
+  NONCE: 100,
+  SIGNATURE: 200,
+  MESSAGE: 1000,
+};
+
 type ValidationInput = Record<string, unknown>;
 
 /**
- * Validate email
+ * Validate email with length limits
  */
 export function validateEmail(email: string): boolean {
+  if (email.length > MAX_LENGTHS.EMAIL) {
+    throw new ValidationError("email", `Email too long (max ${MAX_LENGTHS.EMAIL} characters)`);
+  }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
@@ -33,10 +51,77 @@ export function validateWalletAddress(address: string): boolean {
 }
 
 /**
- * Validate username
+ * Validate username with length limits
  */
 export function validateUsername(username: string): boolean {
-  return username.length >= 3 && username.length <= 50 && /^[a-zA-Z0-9_-]+$/.test(username);
+  if (username.length < 3) {
+    throw new ValidationError("username", "Username must be at least 3 characters");
+  }
+  if (username.length > MAX_LENGTHS.USERNAME) {
+    throw new ValidationError("username", `Username too long (max ${MAX_LENGTHS.USERNAME} characters)`);
+  }
+  return /^[a-zA-Z0-9_-]+$/.test(username);
+}
+
+/**
+ * Validate bio with length limits
+ */
+export function validateBio(bio: string): boolean {
+  if (bio.length > MAX_LENGTHS.BIO) {
+    throw new ValidationError("bio", `Bio too long (max ${MAX_LENGTHS.BIO} characters)`);
+  }
+  return true;
+}
+
+/**
+ * Validate title with length limits
+ */
+export function validateTitle(title: string): boolean {
+  if (title.length < 1) {
+    throw new ValidationError("title", "Title is required");
+  }
+  if (title.length > MAX_LENGTHS.TITLE) {
+    throw new ValidationError("title", `Title too long (max ${MAX_LENGTHS.TITLE} characters)`);
+  }
+  return true;
+}
+
+/**
+ * Validate description with length limits
+ */
+export function validateDescription(description: string): boolean {
+  if (description.length > MAX_LENGTHS.DESCRIPTION) {
+    throw new ValidationError("description", `Description too long (max ${MAX_LENGTHS.DESCRIPTION} characters)`);
+  }
+  return true;
+}
+
+/**
+ * Validate category with length limits
+ */
+export function validateCategory(category: string): boolean {
+  if (category.length < 1) {
+    throw new ValidationError("category", "Category is required");
+  }
+  if (category.length > MAX_LENGTHS.CATEGORY) {
+    throw new ValidationError("category", `Category too long (max ${MAX_LENGTHS.CATEGORY} characters)`);
+  }
+  return true;
+}
+
+/**
+ * Validate URL with length limits
+ */
+export function validateURL(url: string): boolean {
+  if (url.length > MAX_LENGTHS.URL) {
+    throw new ValidationError("url", `URL too long (max ${MAX_LENGTHS.URL} characters)`);
+  }
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
