@@ -6,7 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies with esbuild
-RUN npm install --legacy-peer-deps --production && npm install --save-dev esbuild
+RUN npm install --legacy-peer-deps --production && npm install --save-dev esbuild --legacy-peer-deps
 
 # Copy source code  
 COPY server ./server
