@@ -5,7 +5,7 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { initializeDatabase } from "./db/client";
+import { initializeDatabase, type D1DatabaseLike } from "./db/client";
 import { IPService } from "./services/ip-service";
 import { TransactionService } from "./services/transaction-service";
 import { LiquidityService } from "./services/liquidity-service";
@@ -16,7 +16,10 @@ import { createUserRoutes } from "./routes/user-routes";
 import { createHTTPResponse, createSuccessResponse, ERROR_CODES } from "./utils/errors";
 
 export interface Env {
-  DB: D1Database;
+  DB?: D1DatabaseLike;
+  DATABASE_URL?: string;
+  SUPABASE_URL?: string;
+  SUPABASE_ANON_KEY?: string;
   ENVIRONMENT?: string;
 }
 
@@ -120,8 +123,8 @@ export function createApp(env: Env): Hono<{ Bindings: Env }> {
  * Export handler for Cloudflare Workers
  */
 export default {
-  fetch: (request: Request, env: Env, ctx: ExecutionContext) => {
+  fetch: (request: Request, env: Env) => {
     const app = createApp(env);
-    return app.fetch(request, env, ctx);
+    return app.fetch(request, env);
   },
 };

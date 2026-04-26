@@ -5,8 +5,9 @@
 
 import { createApp } from "../server/index";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import type { Env } from "../server/index";
 
-const env = {
+const env: Env = {
   DATABASE_URL: process.env.DATABASE_URL,
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
@@ -28,10 +29,12 @@ export default async (req: VercelRequest, res: VercelResponse) => {
 
   try {
     // Handle with Hono app
-    const response = await app.fetch(request, env, { waitUntil: (p) => p });
+    const response = await app.fetch(request, env, {
+      waitUntil: (promise: Promise<unknown>) => promise,
+    });
 
     // Copy response headers
-    response.headers.forEach((value, key) => {
+    response.headers.forEach((value: string, key: string) => {
       res.setHeader(key, value);
     });
 

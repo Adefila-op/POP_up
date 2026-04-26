@@ -79,7 +79,7 @@ export interface CreateIPValidationInput {
   launchDurationDays: number;
 }
 
-export function validateCreateIPInput(input: ValidationInput): input is CreateIPValidationInput {
+export function validateCreateIPInput(input: ValidationInput): boolean {
   if (!validateRequiredString(input.title)) {
     throw new ValidationError("title", "Title is required");
   }
@@ -103,9 +103,7 @@ export interface BuyTransactionValidationInput {
   amountUSD: number;
 }
 
-export function validateBuyTransactionInput(
-  input: ValidationInput,
-): input is BuyTransactionValidationInput {
+export function validateBuyTransactionInput(input: ValidationInput): boolean {
   if (!validateRequiredString(input.ipId)) {
     throw new ValidationError("ipId", "IP ID is required");
   }
@@ -123,9 +121,7 @@ export interface SellTransactionValidationInput {
   amountTokens: number;
 }
 
-export function validateSellTransactionInput(
-  input: ValidationInput,
-): input is SellTransactionValidationInput {
+export function validateSellTransactionInput(input: ValidationInput): boolean {
   if (!validateRequiredString(input.ipId)) {
     throw new ValidationError("ipId", "IP ID is required");
   }
