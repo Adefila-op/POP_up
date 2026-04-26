@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, formatEther } from "ethers";
 import {
   AppStateContext,
   type MarketListing,
@@ -69,8 +69,10 @@ const seedListings = (id: string, basePrice: number): MarketListing[] => {
 
 const initialSnapshot: AppStateSnapshot = {
   signedIn: false,
-  creatorWhitelisted: false,
+  creatorProfileActive: false,
   walletConnected: false,
+  walletAddress: null,
+  walletBalance: 0,
   pushEnabled: true,
   cashBalance: 0, // Will be set from API
   ownedContentIds: [],
@@ -93,6 +95,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   // Restore auth on mount
   useEffect(() => {
+    const restoreWallet = async () => {
+      if (!window.ethereum) return;
+
+      try {
+        const provider = new BrowserProvider(window.ethereum);
+        const accounts = await provider.send("eth_accounts", []);
+        const walletAddress = accounts[0];
+        if (!walletAddress) return;
+
+        const balance = await provider.getBalance(walletAddress);
+        setState((prev) => ({
+          ...prev,
+          walletConnected: true,
+          walletAddress,
+          walletBalance: Number(formatEther(balance)),
+        }));
+      } catch (error) {
+        console.error("Failed to restore wallet session:", error);
+      }
+    };
+
     const restoreAuth = async () => {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
@@ -102,7 +125,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           setState((prev) => ({
             ...prev,
             signedIn: true,
-            walletConnected: true,
+            creatorProfileActive: profile.is_creator,
             cashBalance: profile.cash_balance / 100,
           }));
         } catch (error) {
@@ -112,6 +135,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    restoreWallet();
     restoreAuth();
     // Load IP data on mount
     loadIPData();
@@ -123,7 +147,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const ips = await ipAPI.list();
       setApiIPs(ips);
       // Update state with fetched IPs as market listings
-      const listings = ips.flatMap((ip) => seedListings(ip.id, ip.current_price).slice(0, 3));
+      const listings = ips.flatMap((ip) =>
+        seedListings(ip.id, (ip.current_price || 100) / 100).slice(0, 3),
+      );
       setState((prev) => ({
         ...prev,
         marketListings: listings,
@@ -139,7 +165,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw) as Partial<AppStateSnapshot>;
-      setState((prev) => ({ ...prev, ...parsed }));
+      const {
+        signedIn: _signedIn,
+        creatorProfileActive: _creatorProfileActive,
+        walletConnected: _walletConnected,
+        walletAddress: _walletAddress,
+        walletBalance: _walletBalance,
+        ...persistedState
+      } = parsed;
+
+      setState((prev) => ({ ...prev, ...persistedState }));
     } catch {
       // Ignore localStorage hydration failures
     }
@@ -178,10 +213,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const walletAddress = accounts[0];
 
           if (!walletAddress) throw new Error("No wallet selected");
+          const balance = await provider.getBalance(walletAddress);
 
           setState((prev) => ({
             ...prev,
             walletConnected: true,
+            walletAddress,
+            walletBalance: Number(formatEther(balance)),
           }));
 
           return { ok: true as const };
@@ -194,21 +232,25 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       },
 
       disconnectWallet: () => {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        setUser(null);
         setState((prev) => ({
           ...prev,
+          signedIn: false,
+          creatorProfileActive: false,
           walletConnected: false,
+          walletAddress: null,
+          walletBalance: 0,
         }));
       },
 
-      // ===== REAL AUTHENTICATION =====
+      // ===== CREATOR AUTHENTICATION =====
       signIn: async () => {
         try {
           setIsLoading(true);
 
-          if (!window.ethereum) {
-            throw new Error(
-              "No Web3 wallet detected. Please install one: MetaMask (metamask.io), Zerion (zerion.io), Coinbase Wallet, or WalletConnect",
-            );
+          if (!state.walletConnected || !window.ethereum) {
+            throw new Error("Connect your wallet first to create a creator profile.");
           }
 
           const provider = new BrowserProvider(window.ethereum);
@@ -233,7 +275,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           setState((prev) => ({
             ...prev,
             signedIn: true,
-            walletConnected: true,
+            creatorProfileActive: apiUser.is_creator,
             cashBalance: apiUser.cash_balance / 100,
           }));
 
@@ -255,30 +297,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         setState((prev) => ({
           ...prev,
           signedIn: false,
-          creatorWhitelisted: false,
-          walletConnected: false,
+          creatorProfileActive: false,
         }));
       },
 
-      enableCreatorWhitelist: async () => {
+      enableCreatorProfile: async () => {
         try {
           if (!user) throw new Error("Not signed in");
 
-          // Update user to be a creator
+          // Explicit creator activation is separate from collector wallet access.
           const updated = await authAPI.updateProfile({
-            ...user,
             is_creator: true,
           });
 
           setUser(updated);
           setState((prev) => ({
             ...prev,
-            creatorWhitelisted: true,
+            creatorProfileActive: true,
           }));
 
           return { ok: true as const };
         } catch (error) {
-          console.error("Creator enable failed:", error);
+          console.error("Creator profile activation failed:", error);
           return { ok: false as const, reason: (error as Error).message };
         }
       },
@@ -290,8 +330,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       // ===== IP/PRODUCT OPERATIONS =====
       publishContent: async ({ type, title, description, price, tokenize, fileName }) => {
         try {
-          if (!user || !state.walletConnected) {
-            return { contentId: "", ipId: "", error: "Not authenticated" };
+          if (!user || !state.walletConnected || !state.signedIn || !state.creatorProfileActive) {
+            return { contentId: "", ipId: "", error: "Creator profile required" };
           }
 
           const now = Date.now();

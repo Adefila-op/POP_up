@@ -35,10 +35,12 @@ const types: { id: ContentType; label: string; icon: typeof FileText; cls: strin
 function UploadPage() {
   const navigate = useNavigate();
   const {
+    walletConnected,
     signedIn,
-    creatorWhitelisted,
+    creatorProfileActive,
+    connectWallet,
     signIn,
-    enableCreatorWhitelist,
+    enableCreatorProfile,
     publishContent,
     createdContent,
     createdIpAssets,
@@ -51,8 +53,9 @@ function UploadPage() {
   const [desc, setDesc] = useState("");
   const [tokenize, setTokenize] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isEnabling, setIsEnabling] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fileAccept = useMemo(
@@ -121,7 +124,7 @@ function UploadPage() {
     }
   };
 
-  if (!signedIn || !creatorWhitelisted) {
+  if (!walletConnected || !signedIn || !creatorProfileActive) {
     return (
       <div className="min-h-screen bg-background pb-32">
         <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
@@ -143,18 +146,42 @@ function UploadPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
               Creator Console
             </p>
-            <h2 className="mt-2 text-2xl font-bold">Sign in and get whitelisted to publish</h2>
+            <h2 className="mt-2 text-2xl font-bold">
+              Connect a wallet and activate creator access
+            </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              New creator listings are gated behind sign-in and a creator whitelist check before
-              they can go live.
+              Collectors only need a wallet. Publishing is reserved for creators who explicitly
+              connect, sign in, and activate a creator profile.
             </p>
 
             <div className="mt-5 space-y-3">
               <AccessStep
+                done={walletConnected}
+                title="1. Connect wallet"
+                body="Collectors can stop here. Creators continue to set up publishing access."
+                actionLabel={walletConnected ? "Wallet connected" : "Connect wallet"}
+                isLoading={isConnecting}
+                onAction={async () => {
+                  setIsConnecting(true);
+                  try {
+                    const result = await connectWallet();
+                    if (result.ok) {
+                      toast.success("Wallet connected");
+                    } else {
+                      toast.error(result.reason || "Failed to connect wallet");
+                    }
+                  } catch (error) {
+                    toast.error((error as Error).message || "Wallet connection failed");
+                  } finally {
+                    setIsConnecting(false);
+                  }
+                }}
+              />
+              <AccessStep
                 done={signedIn}
-                title="1. Sign in"
-                body="Confirm your creator identity before you can open the publishing flow."
-                actionLabel={signedIn ? "Signed in" : "Sign in"}
+                title="2. Sign in as creator"
+                body="This creates or restores your creator account. Collector wallets do not need this."
+                actionLabel={signedIn ? "Creator signed in" : "Sign in as creator"}
                 isLoading={isSigningIn}
                 onAction={async () => {
                   setIsSigningIn(true);
@@ -173,28 +200,28 @@ function UploadPage() {
                 }}
               />
               <AccessStep
-                done={creatorWhitelisted}
-                title="2. Creator whitelist"
-                body="Only whitelisted creators can launch new drops in this demo flow."
-                actionLabel={creatorWhitelisted ? "Whitelisted" : "Join whitelist"}
-                isLoading={isEnabling}
+                done={creatorProfileActive}
+                title="3. Activate creator profile"
+                body="Only activated creator profiles can publish products and launch IP."
+                actionLabel={creatorProfileActive ? "Creator profile active" : "Activate profile"}
+                isLoading={isActivating}
                 onAction={async () => {
                   if (!signedIn) {
-                    toast.error("Sign in first to request creator access.");
+                    toast.error("Sign in as creator first.");
                     return;
                   }
-                  setIsEnabling(true);
+                  setIsActivating(true);
                   try {
-                    const result = await enableCreatorWhitelist();
+                    const result = await enableCreatorProfile();
                     if (result.ok) {
-                      toast.success("Creator whitelist approved");
+                      toast.success("Creator profile activated");
                     } else {
-                      toast.error(result.reason || "Failed to enable creator access");
+                      toast.error(result.reason || "Failed to activate creator profile");
                     }
                   } catch (error) {
-                    toast.error((error as Error).message || "Failed to enable creator access");
+                    toast.error((error as Error).message || "Failed to activate creator profile");
                   } finally {
-                    setIsEnabling(false);
+                    setIsActivating(false);
                   }
                 }}
               />
@@ -202,11 +229,13 @@ function UploadPage() {
 
             <button
               type="button"
-              disabled={!signedIn || !creatorWhitelisted}
+              disabled={!walletConnected || !signedIn || !creatorProfileActive}
               onClick={() => toast.success("Creator access unlocked")}
               className="mt-5 w-full rounded-full bg-ink py-3.5 font-semibold text-ink-foreground shadow-ink disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {signedIn && creatorWhitelisted ? "Access granted" : "Complete access checks"}
+              {walletConnected && signedIn && creatorProfileActive
+                ? "Access granted"
+                : "Complete creator setup"}
             </button>
           </div>
         </div>

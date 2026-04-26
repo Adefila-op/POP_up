@@ -9,7 +9,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/portfolio")({
   head: () => ({
     meta: [
-      { title: "Portfolio — Orisale" },
+      { title: "Portfolio - Orisale" },
       { name: "description", content: "Your library, IP holdings, and pool stakes on Orisale." },
     ],
   }),
@@ -19,12 +19,15 @@ export const Route = createFileRoute("/portfolio")({
 function PortfolioPage() {
   const {
     walletConnected,
+    walletAddress,
+    walletBalance,
+    signedIn,
+    creatorProfileActive,
     connectWallet,
     contentCatalog,
     ipCatalog,
     ownedContentIds,
     ipHoldings,
-    cashBalance,
     contentOrders,
     savedContentIds,
     createdIpAssets,
@@ -39,14 +42,17 @@ function PortfolioPage() {
     .map((ip) => ({ ip, shares: ipHoldings[ip.id] ?? 0 }))
     .filter((holding) => holding.shares > 0);
 
-  const totalIp = holdings.reduce((s, h) => s + h.shares * h.ip.pricePerShare, 0);
+  const totalIp = holdings.reduce(
+    (sum, holding) => sum + holding.shares * holding.ip.pricePerShare,
+    0,
+  );
 
   const handleConnect = async () => {
     setIsConnecting(true);
     try {
       const result = await connectWallet();
       if (result.ok) {
-        toast.success("Wallet connected! Sign in to continue.");
+        toast.success("Wallet connected. Collector holdings loaded.");
       } else {
         toast.error(result.reason || "Failed to connect wallet");
       }
@@ -90,28 +96,27 @@ function PortfolioPage() {
 
   return (
     <AppShell title="Portfolio" subtitle="Your library, IP & pools">
-      {/* View Toggle */}
-      <div className="flex gap-2 mb-6">
+      <div className="mb-6 flex gap-2">
         <button
           onClick={() => setView("portfolio")}
-          className={`flex-1 py-3 px-4 rounded-xl font-semibold transition ${
+          className={`flex-1 rounded-xl px-4 py-3 font-semibold transition ${
             view === "portfolio"
               ? "bg-ink text-ink-foreground"
               : "bg-card text-foreground hover:bg-secondary"
           }`}
         >
-          <Wallet className="w-4 h-4 inline mr-2" />
+          <Wallet className="mr-2 inline h-4 w-4" />
           My Holdings
         </button>
         <button
           onClick={() => setView("creator")}
-          className={`flex-1 py-3 px-4 rounded-xl font-semibold transition ${
+          className={`flex-1 rounded-xl px-4 py-3 font-semibold transition ${
             view === "creator"
               ? "bg-ink text-ink-foreground"
               : "bg-card text-foreground hover:bg-secondary"
           }`}
         >
-          <BarChart3 className="w-4 h-4 inline mr-2" />
+          <BarChart3 className="mr-2 inline h-4 w-4" />
           Creator Dashboard
         </button>
       </div>
@@ -121,73 +126,90 @@ function PortfolioPage() {
           <section className="rounded-3xl bg-ink p-6 text-ink-foreground shadow-ink">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs opacity-70">Total balance</p>
-                <p className="mt-1 text-3xl font-bold">${(totalIp + cashBalance).toFixed(2)}</p>
+                <p className="text-xs opacity-70">Collector wallet</p>
+                <p className="mt-1 text-3xl font-bold">{walletBalance.toFixed(4)} ETH</p>
               </div>
               <Wallet className="h-6 w-6 opacity-60" />
             </div>
             <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
-              <Mini label="Cash" value={`$${cashBalance.toFixed(2)}`} />
-              <Mini label="IP value" value={`$${totalIp.toFixed(0)}`} />
+              <Mini label="Wallet" value={`${walletBalance.toFixed(4)} ETH`} />
+              <Mini label="IP value" value={`$${totalIp.toFixed(2)}`} />
             </div>
+            {walletAddress && (
+              <p className="mt-4 text-[11px] opacity-70">
+                Connected as {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              </p>
+            )}
           </section>
 
-          {/* IP Holdings */}
           <section className="mt-6">
             <SectionHead icon={<Coins className="h-4 w-4" />} title="IP holdings" />
             <div className="space-y-3">
-              {holdings.map(({ ip, shares }) => (
-                <Link
-                  key={ip.id}
-                  to="/ip/$id"
-                  params={{ id: ip.id }}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
-                >
-                  <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{ip.title}</p>
-                    <p className="text-xs text-muted-foreground">{shares} shares</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-bold">${(shares * ip.pricePerShare).toFixed(2)}</p>
-                    <p
-                      className={`text-xs font-semibold ${ip.change24h >= 0 ? "text-success" : "text-destructive"}`}
-                    >
-                      <TrendingUp
-                        className={`inline h-3 w-3 ${ip.change24h < 0 ? "rotate-180" : ""}`}
-                      />{" "}
-                      {ip.change24h >= 0 ? "+" : ""}
-                      {ip.change24h}%
-                    </p>
-                  </div>
-                </Link>
-              ))}
+              {holdings.length > 0 ? (
+                holdings.map(({ ip, shares }) => (
+                  <Link
+                    key={ip.id}
+                    to="/ip/$id"
+                    params={{ id: ip.id }}
+                    className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
+                  >
+                    <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{ip.title}</p>
+                      <p className="text-xs text-muted-foreground">{shares} shares</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-bold">${(shares * ip.pricePerShare).toFixed(2)}</p>
+                      <p
+                        className={`text-xs font-semibold ${
+                          ip.change24h >= 0 ? "text-success" : "text-destructive"
+                        }`}
+                      >
+                        <TrendingUp
+                          className={`inline h-3 w-3 ${ip.change24h < 0 ? "rotate-180" : ""}`}
+                        />{" "}
+                        {ip.change24h >= 0 ? "+" : ""}
+                        {ip.change24h}%
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
+                  No IP holdings found for this collector wallet yet.
+                </p>
+              )}
             </div>
           </section>
 
-          {/* Library */}
           <section className="mt-6">
             <SectionHead icon={<Library className="h-4 w-4" />} title="My library" />
             <div className="space-y-3">
-              {library.map((item) => (
-                <Link
-                  key={item.id}
-                  to="/content/$id"
-                  params={{ id: item.id }}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
-                >
-                  <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{item.title}</p>
-                    <p className="text-xs capitalize text-muted-foreground">
-                      {item.type} · {item.creator}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-semibold text-success-foreground">
-                    Owned
-                  </span>
-                </Link>
-              ))}
+              {library.length > 0 ? (
+                library.map((item) => (
+                  <Link
+                    key={item.id}
+                    to="/content/$id"
+                    params={{ id: item.id }}
+                    className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft"
+                  >
+                    <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold">{item.title}</p>
+                      <p className="text-xs capitalize text-muted-foreground">
+                        {item.type} · {item.creator}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-semibold text-success-foreground">
+                      Owned
+                    </span>
+                  </Link>
+                ))
+              ) : (
+                <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
+                  No purchased content is attached to this collector session yet.
+                </p>
+              )}
             </div>
           </section>
 
@@ -245,10 +267,29 @@ function PortfolioPage() {
             </div>
           </section>
         </>
+      ) : !signedIn || !creatorProfileActive ? (
+        <section className="rounded-3xl bg-card p-6 shadow-pop">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+            Creator access
+          </p>
+          <h2 className="mt-2 text-2xl font-bold">Collectors can stop at wallet connection</h2>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            Your collector portfolio is already available. If you want to publish products or launch
+            IP, finish the separate creator setup flow.
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-2 text-xs">
+            <Mini label="Wallet" value={walletConnected ? "Connected" : "Required"} />
+            <Mini label="Creator" value={signedIn && creatorProfileActive ? "Active" : "Not set"} />
+          </div>
+          <Link
+            to="/upload"
+            className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-ink py-3.5 font-semibold text-ink-foreground shadow-ink"
+          >
+            Become a creator
+          </Link>
+        </section>
       ) : (
-        /* Creator Dashboard View */
         <>
-          {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3">
             <section className="rounded-3xl bg-card p-4 shadow-soft">
               <p className="text-xs text-muted-foreground">Total Earnings</p>
@@ -262,22 +303,19 @@ function PortfolioPage() {
             </section>
           </div>
 
-          {/* Launch IP Section */}
           <section className="mt-6">
             <SectionHead icon={<Coins className="h-4 w-4" />} title="Your IP Assets" />
             <Link
               to="/creator"
-              className="block rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-4 shadow-soft text-white hover:shadow-lg transition"
+              className="block rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 p-4 text-white shadow-soft transition hover:shadow-lg"
             >
-              <p className="font-semibold flex items-center gap-2">
-                <span className="text-xl">⚡</span> Launch IP Asset
-              </p>
-              <p className="text-xs mt-1 opacity-90">
-                Create and tokenize your intellectual property
+              <p className="font-semibold">Launch IP Asset</p>
+              <p className="mt-1 text-xs opacity-90">
+                Create and tokenize your intellectual property.
               </p>
             </Link>
             {createdIpAssets.length === 0 && (
-              <p className="rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft mt-3">
+              <p className="mt-3 rounded-2xl bg-card p-4 text-sm text-muted-foreground shadow-soft">
                 No IP assets yet. Launch your first IP to get started.
               </p>
             )}
@@ -286,7 +324,7 @@ function PortfolioPage() {
                 key={ip.id}
                 to="/ip/$id"
                 params={{ id: ip.id }}
-                className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
+                className="mt-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft transition hover:shadow-lg"
               >
                 <img src={ip.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
@@ -301,13 +339,12 @@ function PortfolioPage() {
             ))}
           </section>
 
-          {/* Products Section */}
           <section className="mt-6">
             <SectionHead icon={<Library className="h-4 w-4" />} title="Your Products" />
             {contentCatalog.length === 0 ? (
               <div className="rounded-2xl bg-card p-4 shadow-soft">
                 <p className="text-sm text-muted-foreground">No products yet.</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Navigate to Upload to add your first product.
                 </p>
               </div>
@@ -317,36 +354,33 @@ function PortfolioPage() {
                   key={item.id}
                   to="/content/$id"
                   params={{ id: item.id }}
-                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft mt-3 hover:shadow-lg transition"
+                  className="mt-3 flex items-center gap-3 rounded-2xl bg-card p-3 shadow-soft transition hover:shadow-lg"
                 >
                   <img src={item.cover} alt="" className="h-12 w-12 rounded-xl object-cover" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{item.title}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
+                    <p className="text-xs capitalize text-muted-foreground">
                       {item.type} · ${item.price}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-bold">{item.sales} sales</p>
-                    <p className="text-xs text-muted-foreground">⭐ {item.rating}</p>
+                    <p className="text-xs text-muted-foreground">★ {item.rating}</p>
                   </div>
                 </Link>
               ))
             )}
           </section>
 
-          {/* Repost to Discovery */}
           <section className="mt-6">
             <SectionHead icon={<TrendingUp className="h-4 w-4" />} title="Repost & Promote" />
             <Link
               to="/creator"
-              className="block rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-4 shadow-soft text-white hover:shadow-lg transition"
+              className="block rounded-2xl bg-gradient-to-br from-pink-500 to-pink-600 p-4 text-white shadow-soft transition hover:shadow-lg"
             >
-              <p className="font-semibold flex items-center gap-2">
-                <span className="text-xl">📢</span> Repost Product to Discovery
-              </p>
-              <p className="text-xs mt-1 opacity-90">
-                Share your products with the creator community
+              <p className="font-semibold">Repost Product to Discovery</p>
+              <p className="mt-1 text-xs opacity-90">
+                Share your products with the creator community.
               </p>
             </Link>
           </section>

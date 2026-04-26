@@ -71,7 +71,8 @@ interface CreatedPost {
 }
 
 function CreatorDashboard() {
-  const { createdContent, createdIpAssets, signedIn } = useAppState();
+  const { createdContent, createdIpAssets, signedIn, creatorProfileActive, walletConnected } =
+    useAppState();
   const [ipModalOpen, setIpModalOpen] = useState(false);
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -123,17 +124,23 @@ function CreatorDashboard() {
     },
   ];
 
-  if (!signedIn) {
+  if (!walletConnected || !signedIn || !creatorProfileActive) {
     return (
       <AppShell title="Creator Dashboard">
         <div className="max-w-7xl mx-auto">
           <Alert>
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Sign In Required</AlertTitle>
+            <AlertTitle>Creator Access Required</AlertTitle>
             <AlertDescription>
-              You need to sign in to access your creator dashboard.
+              Connect a wallet and activate a creator profile before using the creator dashboard.
+              Collectors can stay wallet-only and review holdings from the portfolio page.
             </AlertDescription>
           </Alert>
+          <div className="mt-4">
+            <Button asChild>
+              <Link to="/upload">Set up creator access</Link>
+            </Button>
+          </div>
         </div>
       </AppShell>
     );

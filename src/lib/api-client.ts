@@ -73,12 +73,19 @@ export interface BurnClaim {
   updated_at: string;
 }
 
-// Get API base URL from environment or use default
-const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname === "localhost"
-    ? "http://localhost:3000"
-    : "https://popup-production.up.railway.app");
+// In production we always use same-origin /api so deployed frontends
+// cannot be accidentally pointed at an old cross-origin backend.
+const API_BASE = (() => {
+  if (typeof window === "undefined") {
+    return import.meta.env.VITE_API_URL || "";
+  }
+
+  if (window.location.hostname === "localhost") {
+    return import.meta.env.VITE_API_URL || "http://localhost:3000";
+  }
+
+  return "";
+})();
 
 /**
  * Generic API call wrapper

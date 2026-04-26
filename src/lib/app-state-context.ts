@@ -21,8 +21,10 @@ export type ContentOrder = {
 
 export type AppStateSnapshot = {
   signedIn: boolean;
-  creatorWhitelisted: boolean;
+  creatorProfileActive: boolean;
   walletConnected: boolean;
+  walletAddress: string | null;
+  walletBalance: number;
   pushEnabled: boolean;
   cashBalance: number;
   ownedContentIds: string[];
@@ -42,7 +44,7 @@ export type AppStateContextValue = AppStateSnapshot & {
   ipCatalog: IpAsset[];
   signIn: () => Promise<{ ok: boolean; reason?: string }>;
   signOut: () => void;
-  enableCreatorWhitelist: () => Promise<{ ok: boolean; reason?: string }>;
+  enableCreatorProfile: () => Promise<{ ok: boolean; reason?: string }>;
   connectWallet: () => Promise<{ ok: boolean; reason?: string }>;
   disconnectWallet: () => void;
   setPushEnabled: (enabled: boolean) => void;

@@ -1,5 +1,3 @@
-server/
-api/
 *.md
 .git
 .gitignore
