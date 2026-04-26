@@ -6,12 +6,20 @@ import {
   type AppStateContextValue,
   type AppStateSnapshot,
 } from "@/lib/app-state-context";
-import { CONTENT, CREATORS, type ContentItem, type IpAsset, getCreatorByName } from "@/lib/data";
+import {
+  CONTENT,
+  CREATORS,
+  IP_ASSETS,
+  type ContentItem,
+  type IpAsset,
+  getCreatorByName,
+} from "@/lib/data";
 import { authAPI, ipAPI, transactionAPI, type User, type IP } from "@/lib/api-client";
 
 const STORAGE_KEY = "popup-app-state-v1";
 const AUTH_TOKEN_KEY = "auth_token";
 const DEMO_CREATOR_NAME = "Mira Osei";
+const LOCAL_DEMO_TOKEN_PREFIX = "local-demo:";
 
 const typeCategory: Record<ContentItem["type"], string> = {
   pdf: "Guide",
@@ -37,6 +45,16 @@ const apiIPToIpAsset = (ip: IP): IpAsset => ({
   monthlyRevenue: Math.round((ip.current_liquidity || 0) / 10) || 250,
   change24h: 0,
   description: ip.description || "Fractionalized digital asset",
+});
+
+const createLocalDemoUser = (walletAddress: string, isCreator = false): User => ({
+  id: `local-${walletAddress.toLowerCase()}`,
+  wallet_address: walletAddress,
+  username: `creator_${walletAddress.slice(2, 8)}`,
+  is_creator: isCreator,
+  cash_balance: 0,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 });
 
 const seedListings = (id: string, basePrice: number): MarketListing[] => {
@@ -120,6 +138,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem(AUTH_TOKEN_KEY);
       if (token) {
         try {
+          if (token.startsWith(LOCAL_DEMO_TOKEN_PREFIX)) {
+            const walletAddress = token.slice(LOCAL_DEMO_TOKEN_PREFIX.length);
+            const demoUser = createLocalDemoUser(walletAddress);
+            setUser(demoUser);
+            setState((prev) => ({
+              ...prev,
+              signedIn: true,
+              creatorProfileActive: demoUser.is_creator,
+            }));
+            return;
+          }
+
           const profile = await authAPI.getProfile();
           setUser(profile);
           setState((prev) => ({
@@ -192,11 +222,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AppStateContextValue>(
     () => ({
       ...state,
-      contentCatalog: [...state.createdContent].map((item) => ({
+      contentCatalog: [...state.createdContent, ...CONTENT].map((item) => ({
         ...item,
         sales: item.sales + (state.contentPurchaseCounts[item.id] ?? 0),
       })),
-      ipCatalog: [...state.createdIpAssets, ...apiIPs.map(apiIPToIpAsset)],
+      ipCatalog: [
+        ...state.createdIpAssets,
+        ...(apiIPs.length > 0 ? apiIPs.map(apiIPToIpAsset) : IP_ASSETS),
+      ],
 
       // ===== REAL WALLET CONNECT =====
       connectWallet: async () => {
@@ -266,21 +299,30 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           const signature = await signer.signMessage(message);
 
           // Login to backend
-          const { user: apiUser, token } = await authAPI.login(walletAddress, message, signature);
+          try {
+            const { user: apiUser, token } = await authAPI.login(walletAddress, message, signature);
 
-          // Store token
-          localStorage.setItem(AUTH_TOKEN_KEY, token);
+            localStorage.setItem(AUTH_TOKEN_KEY, token);
+            setUser(apiUser);
+            setState((prev) => ({
+              ...prev,
+              signedIn: true,
+              creatorProfileActive: apiUser.is_creator,
+              cashBalance: apiUser.cash_balance / 100,
+            }));
 
-          setUser(apiUser);
-          setState((prev) => ({
-            ...prev,
-            signedIn: true,
-            creatorProfileActive: apiUser.is_creator,
-            cashBalance: apiUser.cash_balance / 100,
-          }));
-
-          // Load user data
-          await loadIPData();
+            await loadIPData();
+          } catch (error) {
+            console.warn("Backend auth unavailable, continuing in local demo mode:", error);
+            const demoUser = createLocalDemoUser(walletAddress);
+            localStorage.setItem(AUTH_TOKEN_KEY, `${LOCAL_DEMO_TOKEN_PREFIX}${walletAddress}`);
+            setUser(demoUser);
+            setState((prev) => ({
+              ...prev,
+              signedIn: true,
+              creatorProfileActive: false,
+            }));
+          }
 
           return { ok: true as const };
         } catch (error) {
@@ -305,12 +347,28 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         try {
           if (!user) throw new Error("Not signed in");
 
-          // Explicit creator activation is separate from collector wallet access.
-          const updated = await authAPI.updateProfile({
-            is_creator: true,
-          });
+          let updatedUser: User;
+          try {
+            updatedUser = await authAPI.updateProfile({
+              is_creator: true,
+            });
+          } catch (error) {
+            console.warn(
+              "Backend profile update unavailable, activating creator mode locally:",
+              error,
+            );
+            updatedUser = {
+              ...user,
+              is_creator: true,
+              updated_at: new Date().toISOString(),
+            };
+            localStorage.setItem(
+              AUTH_TOKEN_KEY,
+              `${LOCAL_DEMO_TOKEN_PREFIX}${updatedUser.wallet_address}`,
+            );
+          }
 
-          setUser(updated);
+          setUser(updatedUser);
           setState((prev) => ({
             ...prev,
             creatorProfileActive: true,
@@ -362,25 +420,53 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
           // If tokenizing, create IP asset on backend
           if (tokenize) {
             const initialLiquidity = price;
-            const newIP = await ipAPI.create({
-              title,
-              description,
-              category: typeCategory[type],
-              coverImageUrl: typeCover[type],
-              initialLiquidityUSD: initialLiquidity,
-              launchDurationDays: 14,
-            });
 
-            ipId = newIP.id;
+            try {
+              const newIP = await ipAPI.create({
+                title,
+                description,
+                category: typeCategory[type],
+                coverImageUrl: typeCover[type],
+                initialLiquidityUSD: initialLiquidity,
+                launchDurationDays: 14,
+              });
 
-            // Add to user's holdings
-            setState((prev) => ({
-              ...prev,
-              ipHoldings: {
-                ...prev.ipHoldings,
-                [ipId]: 250, // Initial allocation
-              },
-            }));
+              ipId = newIP.id;
+
+              setState((prev) => ({
+                ...prev,
+                createdIpAssets: [apiIPToIpAsset(newIP), ...prev.createdIpAssets],
+                ipHoldings: {
+                  ...prev.ipHoldings,
+                  [ipId]: 250,
+                },
+              }));
+            } catch (error) {
+              console.warn("Backend IP creation unavailable, creating a local demo IP:", error);
+              ipId = `local-ip-${now}`;
+
+              const localIpAsset: IpAsset = {
+                id: ipId,
+                title,
+                creator: creator.name,
+                cover: typeCover[type],
+                category: typeCategory[type],
+                shares: 1000,
+                pricePerShare: Math.max(price / 100, 1),
+                monthlyRevenue: Math.round(price * 12),
+                change24h: 0,
+                description,
+              };
+
+              setState((prev) => ({
+                ...prev,
+                createdIpAssets: [localIpAsset, ...prev.createdIpAssets],
+                ipHoldings: {
+                  ...prev.ipHoldings,
+                  [ipId]: 250,
+                },
+              }));
+            }
           }
 
           setState((prev) => ({
