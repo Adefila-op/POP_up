@@ -8,10 +8,10 @@ import {
   real,
   integer,
   sqliteTable,
+  pgTable,
   index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
-import { pgTable } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // Auto-detect table type based on environment
