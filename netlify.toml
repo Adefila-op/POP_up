@@ -1,0 +1,33 @@
+[build]
+command = "npm run build"
+publish = "dist"
+functions = "api"
+
+[build.environment]
+NODE_VERSION = "20"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Content-Type-Options = "nosniff"
+X-Frame-Options = "DENY"
+X-XSS-Protection = "1; mode=block"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+[[headers]]
+for = "/api/*"
+[headers.values]
+Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Environment variables are set in Netlify UI or via netlify env:set command
+# Required variables:
+# - VITE_API_URL: https://popup-production.up.railway.app
+# - VITE_CREATOR_REGISTRY_ADDRESS: 0x875E8bbA262553411DEE69748cbEcB7189a240d4
+# - VITE_IP_MARKETPLACE_ADDRESS: 0xb7792cE67ce25894edD492E1927cf007c6f2cB7d
+# - VITE_WALLETCONNECT_PROJECT_ID: creator-commerce-hub
