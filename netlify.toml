@@ -25,9 +25,18 @@ for = "/api/*"
 [headers.values]
 Cache-Control = "no-cache, no-store, must-revalidate"
 
-# Environment variables are set in Netlify UI or via netlify env:set command
+[[redirects]]
+from = "/api/*"
+to = "/.netlify/functions/catch-all"
+status = 200
+
+# Backend environment variables for database and Supabase
+[context.production]
+environment = { DATABASE_URL = "", SUPABASE_URL = "", SUPABASE_ANON_KEY = "", ENVIRONMENT = "production" }
+
+# Frontend environment variables (can be set via netlify env:set command)
 # Required variables:
-# - VITE_API_URL: https://popup-production.up.railway.app
+# - VITE_API_URL: https://creator-commerce-hub.netlify.app/api (or your Netlify backend URL)
 # - VITE_CREATOR_REGISTRY_ADDRESS: 0x875E8bbA262553411DEE69748cbEcB7189a240d4
 # - VITE_IP_MARKETPLACE_ADDRESS: 0xb7792cE67ce25894edD492E1927cf007c6f2cB7d
 # - VITE_WALLETCONNECT_PROJECT_ID: creator-commerce-hub

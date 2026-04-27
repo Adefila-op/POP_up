@@ -42,3 +42,6 @@ scripts
 hardhat.config.js
 
 .env*.local
+
+# Local Netlify folder
+.netlify

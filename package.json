@@ -79,12 +79,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@netlify/functions": "^2.8.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@openzeppelin/contracts": "^4.9.3",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@vercel/node": "^5.7.13",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.4.2",
     "eslint": "^9.32.0",
